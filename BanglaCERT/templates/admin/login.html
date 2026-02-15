@@ -1,0 +1,84 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block bodyclass %}{{ block.super }} custom-admin-login{% endblock %}
+
+{% block branding %}{% endblock %}
+
+{% block nav-breadcrumbs %}{% endblock %}
+
+{% block nav-sidebar %}{% endblock %}
+
+{% block content_title %}{% endblock %}
+
+{% block content %}
+<div class="admin-login-page">
+    <div class="login-hero">
+        <div class="hero-inner">
+            <div class="hero-brand">
+                <div class="brand-row">
+                    <img class="brand-logo" src="{% static 'admin/img/BanglaCERT-logo.png' %}" alt="BanglaCERT logo">
+                </div>
+                <div class="brand-subtitle">Cyber Incident Reporting &amp; Awareness Portal</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="login-card">
+        <h2>Sign In to Your Account</h2>
+        <p class="login-subtitle">Sign in to manage cyber incidents.</p>
+
+        {% if form.errors %}
+        <p class="errornote">{% trans "Please correct the error below." %}</p>
+        {% endif %}
+
+        {% if form.non_field_errors %}
+        <div class="form-error">
+            {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
+        <form method="post" action="{{ app_path }}" class="login-form">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next }}">
+
+            <div class="form-row">
+                <label for="{{ form.username.id_for_label }}">UserID</label>
+                <input
+                    type="text"
+                    name="{{ form.username.html_name }}"
+                    id="{{ form.username.id_for_label }}"
+                    value="{{ form.username.value|default_if_none:'' }}"
+                    placeholder="Enter your admin userID"
+                    autocomplete="username"
+                    required
+                >
+                {{ form.username.errors }}
+            </div>
+
+            <div class="form-row">
+                <label for="{{ form.password.id_for_label }}">Password</label>
+                <input
+                    type="password"
+                    name="{{ form.password.html_name }}"
+                    id="{{ form.password.id_for_label }}"
+                    placeholder="Enter your password"
+                    autocomplete="current-password"
+                    required
+                >
+                {{ form.password.errors }}
+            </div>
+
+            <div class="form-row submit-row">
+                <input type="submit" value="{% trans 'Login' %}">
+            </div>
+
+            {% if password_reset_url %}
+            <div class="password-reset-link">
+                <a href="{{ password_reset_url }}">{% trans "Forgotten your password or username?" %}</a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+{% endblock %}
