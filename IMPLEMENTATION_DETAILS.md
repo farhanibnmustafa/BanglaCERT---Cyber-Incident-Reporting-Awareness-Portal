@@ -14,6 +14,7 @@ If you change any code later, update this file to keep it accurate.
 4. Customized the **Django admin login page** (banner + card UI).
 5. Customized admin **branding** and CSS.
 6. Connected templates and static folders in `settings.py`.
+7. Improved audit logs to show **status change details** with **who changed** and **when** (timestamp).
 
 ---
 
@@ -126,6 +127,7 @@ class AuditLog(models.Model):                  # define AuditLog database table
 ```python
 from django import forms                       # import Django forms for custom widget
 from django.contrib import admin               # import admin site tools
+from django.utils import timezone              # timezone helpers for readable timestamps
 from django.utils.html import format_html, format_html_join  # safe HTML for audit log
 
 from auditlog.models import AuditLog           # import audit log model
@@ -145,26 +147,54 @@ def log_admin_action(user, action, incident, message=""):  # helper to write log
         message=message,                       # extra detail
     )                                          # end log create
 
+def get_status_action(new_status):             # map status to audit action type
+    if new_status == Incident.STATUS_VERIFIED:
+        return AuditLog.ACTION_APPROVE
+    if new_status == Incident.STATUS_REJECTED:
+        return AuditLog.ACTION_REJECT
+    if new_status == Incident.STATUS_UNDER_REVIEW:
+        return AuditLog.ACTION_UNDER_REVIEW
+    return AuditLog.ACTION_UPDATE
+
+def get_status_label(status_value):            # convert DB value to human label
+    return dict(Incident.STATUS_CHOICES).get(status_value, status_value)
+
+def build_status_change_message(user, previous_status, new_status):  # full status change message
+    changed_by = user.username if user else "Unknown"
+    changed_at = timezone.localtime(timezone.now()).strftime("%Y-%m-%d %H:%M:%S %Z")
+    return (
+        f"Status changed from {get_status_label(previous_status)} "
+        f"to {get_status_label(new_status)} by {changed_by} at {changed_at}."
+    )
+
+def log_status_change(user, incident, previous_status, new_status):  # single helper for status logs
+    action = get_status_action(new_status)
+    message = build_status_change_message(user, previous_status, new_status)
+    log_admin_action(user, action, incident, message)
+
 @admin.action(description="Approve selected incidents")  # admin action label
 def approve_incidents(modeladmin, request, queryset):    # approve action function
     for incident in queryset:                 # loop each selected incident
+        previous_status = incident.status     # keep old status for log
         incident.status = Incident.STATUS_VERIFIED  # set to verified
         incident.save(update_fields=["status", "updated_at"])  # save status only
-        log_admin_action(request.user, AuditLog.ACTION_APPROVE, incident, "Approved by admin.")
+        log_status_change(request.user, incident, previous_status, incident.status)
 
 @admin.action(description="Mark selected incidents as Under Review")  # action label
 def mark_under_review(modeladmin, request, queryset):     # under review action
     for incident in queryset:                 # loop each incident
+        previous_status = incident.status     # keep old status for log
         incident.status = Incident.STATUS_UNDER_REVIEW    # set status
         incident.save(update_fields=["status", "updated_at"])
-        log_admin_action(request.user, AuditLog.ACTION_UNDER_REVIEW, incident, "Marked as Under Review by admin.")
+        log_status_change(request.user, incident, previous_status, incident.status)
 
 @admin.action(description="Reject selected incidents")    # action label
 def reject_incidents(modeladmin, request, queryset):      # reject action
     for incident in queryset:                 # loop each incident
+        previous_status = incident.status     # keep old status for log
         incident.status = Incident.STATUS_REJECTED        # set status
         incident.save(update_fields=["status", "updated_at"])
-        log_admin_action(request.user, AuditLog.ACTION_REJECT, incident, "Rejected by admin.")
+        log_status_change(request.user, incident, previous_status, incident.status)
 
 class IncidentAdminForm(forms.ModelForm):     # custom admin form
     class Meta:                               # Django form metadata
@@ -225,7 +255,7 @@ class IncidentAdmin(admin.ModelAdmin):        # admin configuration
             "<li>{} — <strong>{}</strong> by {}<br><span style='color:#667085'>{}</span></li>",
             (
                 (
-                    log.created_at.strftime("%Y-%m-%d %H:%M"),
+                    timezone.localtime(log.created_at).strftime("%Y-%m-%d %H:%M:%S %Z"),
                     log.get_action_display(),
                     log.user.username if log.user else "Unknown",
                     log.message or "",
@@ -248,19 +278,7 @@ class IncidentAdmin(admin.ModelAdmin):        # admin configuration
             log_admin_action(request.user, AuditLog.ACTION_CREATE, obj, "Incident created by admin.")
             return
         if previous_status and previous_status != obj.status:  # status changed
-            if obj.status == Incident.STATUS_VERIFIED:
-                action = AuditLog.ACTION_APPROVE
-                message = f"Status changed from {previous_status} to {obj.status} (approved)."
-            elif obj.status == Incident.STATUS_REJECTED:
-                action = AuditLog.ACTION_REJECT
-                message = f"Status changed from {previous_status} to {obj.status} (rejected)."
-            elif obj.status == Incident.STATUS_UNDER_REVIEW:
-                action = AuditLog.ACTION_UNDER_REVIEW
-                message = f"Status changed from {previous_status} to {obj.status} (under review)."
-            else:
-                action = AuditLog.ACTION_UPDATE
-                message = f"Status changed from {previous_status} to {obj.status}."
-            log_admin_action(request.user, action, obj, message)
+            log_status_change(request.user, obj, previous_status, obj.status)
         else:                                           # no status change
             log_admin_action(request.user, AuditLog.ACTION_UPDATE, obj, "Incident updated by admin.")
 ```
@@ -271,6 +289,7 @@ class IncidentAdmin(admin.ModelAdmin):        # admin configuration
 ```python
 from django.contrib import admin               # import admin tools
 from django.urls import reverse                # build admin link URLs
+from django.utils import timezone              # format local timestamp
 from django.utils.html import format_html      # safe HTML output
 
 from incidents.models import Incident          # import Incident to show title/type
@@ -278,7 +297,15 @@ from .models import AuditLog                   # import AuditLog model
 
 @admin.register(AuditLog)                      # register AuditLog in admin
 class AuditLogAdmin(admin.ModelAdmin):         # admin configuration
-    list_display = ("id", "action", "incident_type", "incident_title_link", "changed_by", "created_at")
+    list_display = (
+        "id",
+        "action",
+        "incident_type",
+        "incident_title_link",
+        "status_update_info",
+        "changed_by",
+        "changed_at",
+    )
     list_filter = ("action", "object_type")    # filter by action and object type
     search_fields = ("object_type", "object_id", "user__username", "message")
     ordering = ("-created_at",)                # newest first
@@ -318,6 +345,19 @@ class AuditLogAdmin(admin.ModelAdmin):         # admin configuration
         return obj.user.username if obj.user else "Unknown"
 
     changed_by.short_description = "Changed by"
+
+    def changed_at(self, obj):                # formatted timestamp
+        return timezone.localtime(obj.created_at).strftime("%Y-%m-%d %H:%M:%S %Z")
+
+    changed_at.short_description = "Timestamp"
+    changed_at.admin_order_field = "created_at"
+
+    def status_update_info(self, obj):        # show status update text
+        if obj.object_type != "Incident":
+            return "-"
+        return obj.message or "-"
+
+    status_update_info.short_description = "Status Update Details"
 ```
 
 ---
@@ -709,6 +749,16 @@ STATICFILES_DIRS = [                            # extra static file folders
 1. Admin login: `http://127.0.0.1:8000/admin/`
 2. Audit logs: Admin sidebar → **Audit Logs**
 3. Incidents: Admin sidebar → **Incidents**
+
+---
+
+**How To Verify (Admin UI)**
+1. Open **Incidents** in Django admin.
+2. Click any incident and change the **Status** field.
+3. Save the incident.
+4. In the same incident page, check **Audit log** section. You should see time, action, user, and message.
+5. Open **Audit Logs** from sidebar.
+6. Confirm the latest row shows **Status Update Details** (old status to new status, by user, at timestamp), **Changed by**, and **Timestamp**.
 
 ---
 
