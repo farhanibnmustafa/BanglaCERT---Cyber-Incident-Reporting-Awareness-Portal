@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib import admin
+from django.utils import timezone
 from django.utils.html import format_html, format_html_join
 
 from auditlog.models import AuditLog
@@ -24,28 +25,60 @@ def log_admin_action(user, action, incident, message=""):
     )
 
 
+def get_status_action(new_status):
+    if new_status == Incident.STATUS_VERIFIED:
+        return AuditLog.ACTION_APPROVE
+    if new_status == Incident.STATUS_REJECTED:
+        return AuditLog.ACTION_REJECT
+    if new_status == Incident.STATUS_UNDER_REVIEW:
+        return AuditLog.ACTION_UNDER_REVIEW
+    return AuditLog.ACTION_UPDATE
+
+
+def get_status_label(status_value):
+    return dict(Incident.STATUS_CHOICES).get(status_value, status_value)
+
+
+def build_status_change_message(user, previous_status, new_status):
+    changed_by = user.username if user else "Unknown"
+    changed_at = timezone.localtime(timezone.now()).strftime("%Y-%m-%d %H:%M:%S %Z")
+    return (
+        f"Status changed from {get_status_label(previous_status)} "
+        f"to {get_status_label(new_status)} by {changed_by} at {changed_at}."
+    )
+
+
+def log_status_change(user, incident, previous_status, new_status):
+    action = get_status_action(new_status)
+    message = build_status_change_message(user, previous_status, new_status)
+    log_admin_action(user, action, incident, message)
+
+
 @admin.action(description="Approve selected incidents")
 def approve_incidents(modeladmin, request, queryset):
     for incident in queryset:
+        previous_status = incident.status
         incident.status = Incident.STATUS_VERIFIED
         incident.save(update_fields=["status", "updated_at"])
-        log_admin_action(request.user, AuditLog.ACTION_APPROVE, incident, "Approved by admin.")
+        log_status_change(request.user, incident, previous_status, incident.status)
 
 
 @admin.action(description="Mark selected incidents as Under Review")
 def mark_under_review(modeladmin, request, queryset):
     for incident in queryset:
+        previous_status = incident.status
         incident.status = Incident.STATUS_UNDER_REVIEW
         incident.save(update_fields=["status", "updated_at"])
-        log_admin_action(request.user, AuditLog.ACTION_UNDER_REVIEW, incident, "Marked as Under Review by admin.")
+        log_status_change(request.user, incident, previous_status, incident.status)
 
 
 @admin.action(description="Reject selected incidents")
 def reject_incidents(modeladmin, request, queryset):
     for incident in queryset:
+        previous_status = incident.status
         incident.status = Incident.STATUS_REJECTED
         incident.save(update_fields=["status", "updated_at"])
-        log_admin_action(request.user, AuditLog.ACTION_REJECT, incident, "Rejected by admin.")
+        log_status_change(request.user, incident, previous_status, incident.status)
 
 
 class IncidentAdminForm(forms.ModelForm):
@@ -115,7 +148,7 @@ class IncidentAdmin(admin.ModelAdmin):
             "<li>{} — <strong>{}</strong> by {}<br><span style='color:#667085'>{}</span></li>",
             (
                 (
-                    log.created_at.strftime("%Y-%m-%d %H:%M"),
+                    timezone.localtime(log.created_at).strftime("%Y-%m-%d %H:%M:%S %Z"),
                     log.get_action_display(),
                     log.user.username if log.user else "Unknown",
                     log.message or "",
@@ -139,18 +172,6 @@ class IncidentAdmin(admin.ModelAdmin):
             return
 
         if previous_status and previous_status != obj.status:
-            if obj.status == Incident.STATUS_VERIFIED:
-                action = AuditLog.ACTION_APPROVE
-                message = f"Status changed from {previous_status} to {obj.status} (approved)."
-            elif obj.status == Incident.STATUS_REJECTED:
-                action = AuditLog.ACTION_REJECT
-                message = f"Status changed from {previous_status} to {obj.status} (rejected)."
-            elif obj.status == Incident.STATUS_UNDER_REVIEW:
-                action = AuditLog.ACTION_UNDER_REVIEW
-                message = f"Status changed from {previous_status} to {obj.status} (under review)."
-            else:
-                action = AuditLog.ACTION_UPDATE
-                message = f"Status changed from {previous_status} to {obj.status}."
-            log_admin_action(request.user, action, obj, message)
+            log_status_change(request.user, obj, previous_status, obj.status)
         else:
             log_admin_action(request.user, AuditLog.ACTION_UPDATE, obj, "Incident updated by admin.")
