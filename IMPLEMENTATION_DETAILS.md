@@ -159,12 +159,22 @@ def get_status_action(new_status):             # map status to audit action type
 def get_status_label(status_value):            # convert DB value to human label
     return dict(Incident.STATUS_CHOICES).get(status_value, status_value)
 
-def build_status_change_message(user, previous_status, new_status):  # full status change message
+def get_actor_context(user):                   # common actor + time details
     changed_by = user.username if user else "Unknown"
     changed_at = timezone.localtime(timezone.now()).strftime("%Y-%m-%d %H:%M:%S %Z")
-    return (
-        f"Status changed from {get_status_label(previous_status)} "
-        f"to {get_status_label(new_status)} by {changed_by} at {changed_at}."
+    return changed_by, changed_at
+
+def build_audit_message(user, detail):         # generic audit message with actor/time
+    changed_by, changed_at = get_actor_context(user)
+    return f"{detail} by {changed_by} at {changed_at}."
+
+def build_status_change_message(user, previous_status, new_status):  # full status change message
+    return build_audit_message(
+        user,
+        (
+            f"Status changed from {get_status_label(previous_status)} "
+            f"to {get_status_label(new_status)}"
+        ),
     )
 
 def log_status_change(user, incident, previous_status, new_status):  # single helper for status logs
@@ -225,11 +235,18 @@ class IncidentAdmin(admin.ModelAdmin):        # admin configuration
     def get_readonly_fields(self, request, obj=None):  # fields that cannot be edited
         readonly = ["audit_log_entries"]      # audit log is read‑only
         if obj:                               # if editing existing incident
-            readonly.extend(["created_by", "created_at", "updated_at"])  # lock these
+            readonly.extend([                 # lock core incident details + metadata
+                "title",
+                "description",
+                "incident_date",
+                "created_by",
+                "created_at",
+                "updated_at",
+            ])
         return readonly
 
-    def has_add_permission(self, request):    # who can create incidents
-        return request.user.is_authenticated and request.user.is_staff
+    def has_add_permission(self, request):    # creation is disabled in admin
+        return False                           # no admin can create incidents
 
     def has_change_permission(self, request, obj=None):  # who can edit
         return request.user.is_authenticated and request.user.is_staff
@@ -275,12 +292,22 @@ class IncidentAdmin(admin.ModelAdmin):        # admin configuration
             obj.created_by = request.user
         super().save_model(request, obj, form, change)  # normal save
         if not change:                                  # created new incident
-            log_admin_action(request.user, AuditLog.ACTION_CREATE, obj, "Incident created by admin.")
+            log_admin_action(
+                request.user,
+                AuditLog.ACTION_CREATE,
+                obj,
+                build_audit_message(request.user, "Incident created"),
+            )
             return
         if previous_status and previous_status != obj.status:  # status changed
             log_status_change(request.user, obj, previous_status, obj.status)
         else:                                           # no status change
-            log_admin_action(request.user, AuditLog.ACTION_UPDATE, obj, "Incident updated by admin.")
+            log_admin_action(
+                request.user,
+                AuditLog.ACTION_UPDATE,
+                obj,
+                build_audit_message(request.user, "Incident updated"),
+            )
 ```
 
 ---
@@ -302,7 +329,6 @@ class AuditLogAdmin(admin.ModelAdmin):         # admin configuration
         "action",
         "incident_type",
         "incident_title_link",
-        "status_update_info",
         "changed_by",
         "changed_at",
     )
@@ -352,12 +378,6 @@ class AuditLogAdmin(admin.ModelAdmin):         # admin configuration
     changed_at.short_description = "Timestamp"
     changed_at.admin_order_field = "created_at"
 
-    def status_update_info(self, obj):        # show status update text
-        if obj.object_type != "Incident":
-            return "-"
-        return obj.message or "-"
-
-    status_update_info.short_description = "Status Update Details"
 ```
 
 ---
@@ -729,7 +749,7 @@ TEMPLATES = [                                   # template engine settings
     },
 ]
 
-STATIC_URL = 'static/'                          # base URL for static files
+STATIC_URL = '/static/'                          # base URL for static files
 STATICFILES_DIRS = [                            # extra static file folders
     BASE_DIR / 'static',                         # project-level static
 ]
@@ -758,7 +778,7 @@ STATICFILES_DIRS = [                            # extra static file folders
 3. Save the incident.
 4. In the same incident page, check **Audit log** section. You should see time, action, user, and message.
 5. Open **Audit Logs** from sidebar.
-6. Confirm the latest row shows **Status Update Details** (old status to new status, by user, at timestamp), **Changed by**, and **Timestamp**.
+6. Confirm the latest row shows **Changed by** and **Timestamp** for each log entry.
 
 ---
 
