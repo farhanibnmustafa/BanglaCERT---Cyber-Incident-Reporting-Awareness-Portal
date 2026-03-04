@@ -15,7 +15,6 @@ class AuditLogAdmin(admin.ModelAdmin):
         "action",
         "incident_type",
         "incident_title_link",
-        "status_update_info",
         "changed_by",
         "changed_at",
     )
@@ -64,10 +63,3 @@ class AuditLogAdmin(admin.ModelAdmin):
 
     changed_at.short_description = "Timestamp"
     changed_at.admin_order_field = "created_at"
-
-    def status_update_info(self, obj):
-        if obj.object_type != "Incident":
-            return "-"
-        return obj.message or "-"
-
-    status_update_info.short_description = "Status Update Details"

@@ -39,12 +39,24 @@ def get_status_label(status_value):
     return dict(Incident.STATUS_CHOICES).get(status_value, status_value)
 
 
-def build_status_change_message(user, previous_status, new_status):
+def get_actor_context(user):
     changed_by = user.username if user else "Unknown"
     changed_at = timezone.localtime(timezone.now()).strftime("%Y-%m-%d %H:%M:%S %Z")
-    return (
-        f"Status changed from {get_status_label(previous_status)} "
-        f"to {get_status_label(new_status)} by {changed_by} at {changed_at}."
+    return changed_by, changed_at
+
+
+def build_audit_message(user, detail):
+    changed_by, changed_at = get_actor_context(user)
+    return f"{detail} by {changed_by} at {changed_at}."
+
+
+def build_status_change_message(user, previous_status, new_status):
+    return build_audit_message(
+        user,
+        (
+            f"Status changed from {get_status_label(previous_status)} "
+            f"to {get_status_label(new_status)}"
+        ),
     )
 
 
@@ -112,14 +124,23 @@ class IncidentAdmin(admin.ModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         readonly = ["audit_log_entries"]
-        # For system admin, keep created_by and timestamps read-only
+        # On edit, lock core incident details and metadata.
         if obj:
-            readonly.extend(["created_by", "created_at", "updated_at"])
+            readonly.extend(
+                [
+                    "title",
+                    "description",
+                    "incident_date",
+                    "created_by",
+                    "created_at",
+                    "updated_at",
+                ]
+            )
         return readonly
 
     def has_add_permission(self, request):
-        # Any staff can create incidents
-        return request.user.is_authenticated and request.user.is_staff
+        # Incident creation is disabled in admin for all users.
+        return False
 
     def has_change_permission(self, request, obj=None):
         # Any staff can change incidents (including incidentadmin229)
@@ -168,10 +189,20 @@ class IncidentAdmin(admin.ModelAdmin):
             obj.created_by = request.user
         super().save_model(request, obj, form, change)
         if not change:
-            log_admin_action(request.user, AuditLog.ACTION_CREATE, obj, "Incident created by admin.")
+            log_admin_action(
+                request.user,
+                AuditLog.ACTION_CREATE,
+                obj,
+                build_audit_message(request.user, "Incident created"),
+            )
             return
 
         if previous_status and previous_status != obj.status:
             log_status_change(request.user, obj, previous_status, obj.status)
         else:
-            log_admin_action(request.user, AuditLog.ACTION_UPDATE, obj, "Incident updated by admin.")
+            log_admin_action(
+                request.user,
+                AuditLog.ACTION_UPDATE,
+                obj,
+                build_audit_message(request.user, "Incident updated"),
+            )
