@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'notificationManagement',
 ]
 
 MIDDLEWARE = [
@@ -83,11 +84,11 @@ WSGI_APPLICATION = 'BanglaCERT.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-       "NAME": "banglacert",
-        "USER": "banglacert_user",
-        "PASSWORD": "fam403229",
-        "HOST": "localhost",
-        "PORT": "5432",
+        'NAME': 'banglacert_db',
+        'USER': 'banglacert_user',
+        'PASSWORD': '1234',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 
@@ -130,3 +131,6 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
+
+
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
