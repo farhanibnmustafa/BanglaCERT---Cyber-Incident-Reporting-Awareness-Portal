@@ -1,153 +1,152 @@
-# Implementation Details (Line‑By‑Line Guide)
+# Implementation Details (Current Snapshot)
 
-This file explains **what I did**, **where**, and **why**.  
-Each section lists the file path and a **line‑by‑line explanation** of the current code in that file.
-
-If you change any code later, update this file to keep it accurate.
+This document reflects the **current state as of March 5, 2026**.
 
 ---
 
-**Overview (What Was Implemented)**
-1. Added an **Incident** model to store incident reports.
-2. Added an **AuditLog** model to record admin actions (create/update/approve/reject/under review).
-3. Built **admin actions and permissions** so admins can change status and logs are recorded.
-4. Customized the **Django admin login page** (banner + card UI).
-5. Customized admin **branding** and CSS.
-6. Connected templates and static folders in `settings.py`.
-7. Improved audit logs to show **status change details** with **who changed** and **when** (timestamp).
+**Overview (What Is Implemented Now)**
+1. `Incident` model stores incident reports with status lifecycle and creator metadata.
+2. `AuditLog` model stores admin actions on incidents.
+3. Incident admin enforces restricted editing:
+   - No admin can create incidents from Django admin.
+   - On existing incidents, `title`, `description`, and `incident_date` are read-only.
+   - Staff can update status.
+   - Only `systemadmin40329` can delete incidents.
+4. Audit log admin is read-only and shows actor/timestamp columns.
+5. Admin login page, branding, and CSS are customized.
+6. Templates/static directories are configured in `settings.py`.
+
+---
+
+**Current Admin Account State (Database Snapshot)**
+
+From `auth_user`:
+
+| id | username         | is_superuser | is_staff | is_active |
+|---:|------------------|--------------|----------|-----------|
+| 2  | systemadmin40329 | true         | true     | true      |
+| 4  | IncidentChecker  | false        | true     | true      |
+
+Operational note:
+- `incidentadmin229` and `coreadmin` were fully deleted from the database.
+- Related references were cleaned during deletion:
+  - `django_admin_log` rows for those users were deleted.
+  - `auditlog_auditlog.user_id` and `incidents_incident.created_by_id` references were set to `NULL` where applicable.
 
 ---
 
 **File: `BanglaCERT/incidents/models.py`**
 ```python
-from django.conf import settings               # import settings to access AUTH_USER_MODEL
-from django.db import models                   # import Django ORM base classes
+from django.conf import settings
+from django.db import models
 
-                                              # blank line for readability
-class Incident(models.Model):                  # define the Incident database table
-    STATUS_PENDING = "PENDING"                 # constant for pending status
-    STATUS_UNDER_REVIEW = "UNDER_REVIEW"       # constant for under review status
-    STATUS_VERIFIED = "VERIFIED"               # constant for verified status
-    STATUS_REJECTED = "REJECTED"               # constant for rejected status
-    STATUS_CLOSED = "CLOSED"                   # constant for closed status
 
-    STATUS_CHOICES = [                         # list of allowed status values
-        (STATUS_PENDING, "Pending"),           # pending label
-        (STATUS_UNDER_REVIEW, "Under Review"), # under review label
-        (STATUS_VERIFIED, "Verified"),         # verified label
-        (STATUS_REJECTED, "Rejected"),         # rejected label
-        (STATUS_CLOSED, "Closed"),             # closed label
-    ]                                          # end status choices
+class Incident(models.Model):
+    STATUS_PENDING = "PENDING"
+    STATUS_UNDER_REVIEW = "UNDER_REVIEW"
+    STATUS_VERIFIED = "VERIFIED"
+    STATUS_REJECTED = "REJECTED"
+    STATUS_CLOSED = "CLOSED"
 
-    CATEGORY_CHOICES = [                       # list of incident categories
-        ("phishing", "Phishing"),              # phishing label
-        ("malware", "Malware"),                # malware label
-        ("fraud", "Fraud"),                    # fraud label
-        ("identity_theft", "Identity Theft"),  # identity theft label
-        ("other", "Other"),                    # other label
-    ]                                          # end category choices
+    STATUS_CHOICES = [
+        (STATUS_PENDING, "Pending"),
+        (STATUS_UNDER_REVIEW, "Under Review"),
+        (STATUS_VERIFIED, "Verified"),
+        (STATUS_REJECTED, "Rejected"),
+        (STATUS_CLOSED, "Closed"),
+    ]
 
-    title = models.CharField(max_length=200)   # incident title
-    category = models.CharField(               # incident category
-        max_length=50,                         # max length for category
-        choices=CATEGORY_CHOICES,              # allowed categories
-        default="other"                        # default category
-    )                                          # end category field
-    description = models.TextField()           # incident description text
-    incident_date = models.DateField()         # date when incident happened
-    status = models.CharField(                 # status of the incident
-        max_length=20,                         # max length for status
-        choices=STATUS_CHOICES,                # allowed statuses
-        default=STATUS_PENDING                 # default status is pending
-    )                                          # end status field
-    created_by = models.ForeignKey(            # who created the incident
-        settings.AUTH_USER_MODEL,              # link to user model
-        on_delete=models.SET_NULL,             # keep incident if user deleted
-        null=True,                             # allow null
-        blank=True,                            # allow blank in forms
-        related_name="incidents_created"       # reverse relation name
-    )                                          # end created_by
-    created_at = models.DateTimeField(         # created time
-        auto_now_add=True                      # set once on create
-    )                                          # end created_at
-    updated_at = models.DateTimeField(         # last updated time
-        auto_now=True                          # update on every save
-    )                                          # end updated_at
+    CATEGORY_CHOICES = [
+        ("phishing", "Phishing"),
+        ("malware", "Malware"),
+        ("fraud", "Fraud"),
+        ("identity_theft", "Identity Theft"),
+        ("other", "Other"),
+    ]
 
-    def __str__(self) -> str:                  # string representation for admin
-        return f"{self.title} ({self.status})" # show title + status
+    title = models.CharField(max_length=200)
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default="other")
+    description = models.TextField()
+    incident_date = models.DateField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="incidents_created"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return f"{self.title} ({self.status})"
 ```
 
 ---
 
 **File: `BanglaCERT/auditlog/models.py`**
 ```python
-from django.conf import settings               # import settings to access AUTH_USER_MODEL
-from django.db import models                   # import Django ORM base classes
+from django.conf import settings
+from django.db import models
 
-                                              # blank line for readability
-class AuditLog(models.Model):                  # define AuditLog database table
-    ACTION_CREATE = "CREATE"                   # constant for create action
-    ACTION_UPDATE = "UPDATE"                   # constant for update action
-    ACTION_UNDER_REVIEW = "UNDER_REVIEW"       # constant for under review action
-    ACTION_APPROVE = "APPROVE"                 # constant for approve action
-    ACTION_REJECT = "REJECT"                   # constant for reject action
 
-    ACTION_CHOICES = [                         # list of allowed action types
-        (ACTION_CREATE, "Create"),             # create label
-        (ACTION_UPDATE, "Update"),             # update label
-        (ACTION_UNDER_REVIEW, "Under Review"), # under review label
-        (ACTION_APPROVE, "Approve"),           # approve label
-        (ACTION_REJECT, "Reject"),             # reject label
-    ]                                          # end action choices
+class AuditLog(models.Model):
+    ACTION_CREATE = "CREATE"
+    ACTION_UPDATE = "UPDATE"
+    ACTION_UNDER_REVIEW = "UNDER_REVIEW"
+    ACTION_APPROVE = "APPROVE"
+    ACTION_REJECT = "REJECT"
 
-    user = models.ForeignKey(                  # admin user who did the action
-        settings.AUTH_USER_MODEL,              # link to user model
-        on_delete=models.SET_NULL,             # keep log if user deleted
-        null=True,                             # allow null
-        blank=True,                            # allow blank
-        related_name="audit_logs"              # reverse relation name
-    )                                          # end user field
-    action = models.CharField(                 # action type
-        max_length=20,                         # max length
-        choices=ACTION_CHOICES                 # allowed actions
-    )                                          # end action field
-    object_type = models.CharField(max_length=100)  # model name (e.g., Incident)
-    object_id = models.PositiveIntegerField()       # ID of the object
-    message = models.TextField(blank=True)          # optional log message
-    created_at = models.DateTimeField(auto_now_add=True)  # timestamp
+    ACTION_CHOICES = [
+        (ACTION_CREATE, "Create"),
+        (ACTION_UPDATE, "Update"),
+        (ACTION_UNDER_REVIEW, "Under Review"),
+        (ACTION_APPROVE, "Approve"),
+        (ACTION_REJECT, "Reject"),
+    ]
 
-    def __str__(self) -> str:                  # string representation for admin
-        return f"{self.action} {self.object_type}#{self.object_id}"  # readable label
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="audit_logs"
+    )
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES)
+    object_type = models.CharField(max_length=100)
+    object_id = models.PositiveIntegerField()
+    message = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self) -> str:
+        return f"{self.action} {self.object_type}#{self.object_id}"
 ```
 
 ---
 
 **File: `BanglaCERT/incidents/admin.py`**
 ```python
-from django import forms                       # import Django forms for custom widget
-from django.contrib import admin               # import admin site tools
-from django.utils import timezone              # timezone helpers for readable timestamps
-from django.utils.html import format_html, format_html_join  # safe HTML for audit log
+from django import forms
+from django.contrib import admin
+from django.utils import timezone
+from django.utils.html import format_html, format_html_join
 
-from auditlog.models import AuditLog           # import audit log model
-from .models import Incident                   # import incident model
+from auditlog.models import AuditLog
 
-INCIDENT_MANAGER_USERNAME = "systemadmin40329" # username allowed to delete incidents
+from .models import Incident
 
-def is_incident_manager(user):                 # helper: is this the manager user?
+
+INCIDENT_MANAGER_USERNAME = "systemadmin40329"
+
+
+def is_incident_manager(user):
     return user.is_authenticated and user.username == INCIDENT_MANAGER_USERNAME
 
-def log_admin_action(user, action, incident, message=""):  # helper to write logs
-    AuditLog.objects.create(                   # create log row
-        user=user,                             # who did it
-        action=action,                         # what action
-        object_type="Incident",                # model type
-        object_id=incident.id,                 # incident id
-        message=message,                       # extra detail
-    )                                          # end log create
 
-def get_status_action(new_status):             # map status to audit action type
+def log_admin_action(user, action, incident, message=""):
+    AuditLog.objects.create(
+        user=user,
+        action=action,
+        object_type="Incident",
+        object_id=incident.id,
+        message=message,
+    )
+
+
+def get_status_action(new_status):
     if new_status == Incident.STATUS_VERIFIED:
         return AuditLog.ACTION_APPROVE
     if new_status == Incident.STATUS_REJECTED:
@@ -156,19 +155,23 @@ def get_status_action(new_status):             # map status to audit action type
         return AuditLog.ACTION_UNDER_REVIEW
     return AuditLog.ACTION_UPDATE
 
-def get_status_label(status_value):            # convert DB value to human label
+
+def get_status_label(status_value):
     return dict(Incident.STATUS_CHOICES).get(status_value, status_value)
 
-def get_actor_context(user):                   # common actor + time details
+
+def get_actor_context(user):
     changed_by = user.username if user else "Unknown"
     changed_at = timezone.localtime(timezone.now()).strftime("%Y-%m-%d %H:%M:%S %Z")
     return changed_by, changed_at
 
-def build_audit_message(user, detail):         # generic audit message with actor/time
+
+def build_audit_message(user, detail):
     changed_by, changed_at = get_actor_context(user)
     return f"{detail} by {changed_by} at {changed_at}."
 
-def build_status_change_message(user, previous_status, new_status):  # full status change message
+
+def build_status_change_message(user, previous_status, new_status):
     return build_audit_message(
         user,
         (
@@ -177,97 +180,112 @@ def build_status_change_message(user, previous_status, new_status):  # full stat
         ),
     )
 
-def log_status_change(user, incident, previous_status, new_status):  # single helper for status logs
+
+def log_status_change(user, incident, previous_status, new_status):
     action = get_status_action(new_status)
     message = build_status_change_message(user, previous_status, new_status)
     log_admin_action(user, action, incident, message)
 
-@admin.action(description="Approve selected incidents")  # admin action label
-def approve_incidents(modeladmin, request, queryset):    # approve action function
-    for incident in queryset:                 # loop each selected incident
-        previous_status = incident.status     # keep old status for log
-        incident.status = Incident.STATUS_VERIFIED  # set to verified
-        incident.save(update_fields=["status", "updated_at"])  # save status only
-        log_status_change(request.user, incident, previous_status, incident.status)
 
-@admin.action(description="Mark selected incidents as Under Review")  # action label
-def mark_under_review(modeladmin, request, queryset):     # under review action
-    for incident in queryset:                 # loop each incident
-        previous_status = incident.status     # keep old status for log
-        incident.status = Incident.STATUS_UNDER_REVIEW    # set status
+@admin.action(description="Approve selected incidents")
+def approve_incidents(modeladmin, request, queryset):
+    for incident in queryset:
+        previous_status = incident.status
+        incident.status = Incident.STATUS_VERIFIED
         incident.save(update_fields=["status", "updated_at"])
         log_status_change(request.user, incident, previous_status, incident.status)
 
-@admin.action(description="Reject selected incidents")    # action label
-def reject_incidents(modeladmin, request, queryset):      # reject action
-    for incident in queryset:                 # loop each incident
-        previous_status = incident.status     # keep old status for log
-        incident.status = Incident.STATUS_REJECTED        # set status
+
+@admin.action(description="Mark selected incidents as Under Review")
+def mark_under_review(modeladmin, request, queryset):
+    for incident in queryset:
+        previous_status = incident.status
+        incident.status = Incident.STATUS_UNDER_REVIEW
         incident.save(update_fields=["status", "updated_at"])
         log_status_change(request.user, incident, previous_status, incident.status)
 
-class IncidentAdminForm(forms.ModelForm):     # custom admin form
-    class Meta:                               # Django form metadata
-        model = Incident                      # connect to Incident model
-        fields = "__all__"                    # include all fields
-        widgets = {                           # custom widgets
-            "incident_date": forms.DateInput(attrs={"type": "date"}),  # HTML5 date picker
-        }                                     # end widgets
 
-@admin.register(Incident)                     # register Incident in admin
-class IncidentAdmin(admin.ModelAdmin):        # admin configuration
-    form = IncidentAdminForm                  # use custom form with date picker
-    list_display = ("id", "title", "created_at", "status", "created_by")  # columns
-    list_display_links = ("id", "title")      # clickable columns
-    list_editable = ("status",)               # dropdown status in list
-    list_filter = ("status", "category")      # filters on right
-    search_fields = ("title", "description")  # search in list
-    actions = None                            # disable bulk actions dropdown
-    actions_on_top = False                    # remove action bar from top
-    actions_on_bottom = False                 # remove action bar from bottom
+@admin.action(description="Reject selected incidents")
+def reject_incidents(modeladmin, request, queryset):
+    for incident in queryset:
+        previous_status = incident.status
+        incident.status = Incident.STATUS_REJECTED
+        incident.save(update_fields=["status", "updated_at"])
+        log_status_change(request.user, incident, previous_status, incident.status)
 
-    def get_fields(self, request, obj=None):  # choose fields for add/edit view
+
+class IncidentAdminForm(forms.ModelForm):
+    class Meta:
+        model = Incident
+        fields = "__all__"
+        widgets = {
+            "incident_date": forms.DateInput(attrs={"type": "date"}),
+        }
+
+
+@admin.register(Incident)
+class IncidentAdmin(admin.ModelAdmin):
+    form = IncidentAdminForm
+    list_display = ("id", "title", "created_at", "status", "created_by")
+    list_display_links = ("id", "title")
+    list_editable = ("status",)
+    list_filter = ("status", "category")
+    search_fields = ("title", "description")
+    actions = None
+    actions_on_top = False
+    actions_on_bottom = False
+
+    def get_fields(self, request, obj=None):
         base_fields = ("title", "category", "description", "incident_date")
-        if obj is None:                       # create form
-            return base_fields                # hide status + created_by on create
+        if obj is None:
+            # On create: hide status + created_by fields
+            return base_fields
+        # On view/edit: show status + created_by
         return base_fields + ("status", "created_by", "created_at", "updated_at", "audit_log_entries")
 
-    def get_readonly_fields(self, request, obj=None):  # fields that cannot be edited
-        readonly = ["audit_log_entries"]      # audit log is read‑only
-        if obj:                               # if editing existing incident
-            readonly.extend([                 # lock core incident details + metadata
-                "title",
-                "description",
-                "incident_date",
-                "created_by",
-                "created_at",
-                "updated_at",
-            ])
+    def get_readonly_fields(self, request, obj=None):
+        readonly = ["audit_log_entries"]
+        # On edit, lock core incident details and metadata.
+        if obj:
+            readonly.extend(
+                [
+                    "title",
+                    "description",
+                    "incident_date",
+                    "created_by",
+                    "created_at",
+                    "updated_at",
+                ]
+            )
         return readonly
 
-    def has_add_permission(self, request):    # creation is disabled in admin
-        return False                           # no admin can create incidents
+    def has_add_permission(self, request):
+        # Incident creation is disabled in admin for all users.
+        return False
 
-    def has_change_permission(self, request, obj=None):  # who can edit
+    def has_change_permission(self, request, obj=None):
+        # Any staff can change incidents (including incidentadmin229)
         return request.user.is_authenticated and request.user.is_staff
 
-    def has_delete_permission(self, request, obj=None):  # who can delete
-        return is_incident_manager(request.user)         # only systemadmin40329
+    def has_delete_permission(self, request, obj=None):
+        # Only systemadmin40329 can delete incidents
+        return is_incident_manager(request.user)
 
-    def has_view_permission(self, request, obj=None):    # who can view
+    def has_view_permission(self, request, obj=None):
+        # Any staff can view incidents
         return request.user.is_authenticated and request.user.is_staff
 
-    def audit_log_entries(self, obj):        # show logs inside incident detail
-        if not obj:                          # no object yet
-            return "-"                       # show dash
-        logs = (                             # query recent logs
+    def audit_log_entries(self, obj):
+        if not obj:
+            return "-"
+        logs = (
             AuditLog.objects.filter(object_type="Incident", object_id=obj.id)
-            .order_by("-created_at")         # newest first
-            .select_related("user")[:20]     # include user, limit 20
+            .order_by("-created_at")
+            .select_related("user")[:20]
         )
-        if not logs:                         # no logs found
+        if not logs:
             return "No audit log entries yet."
-        items = format_html_join(            # build list items safely
+        items = format_html_join(
             "",
             "<li>{} — <strong>{}</strong> by {}<br><span style='color:#667085'>{}</span></li>",
             (
@@ -282,16 +300,16 @@ class IncidentAdmin(admin.ModelAdmin):        # admin configuration
         )
         return format_html("<ul style='margin:0; padding-left:18px'>{}</ul>", items)
 
-    audit_log_entries.short_description = "Audit log"  # label in admin form
+    audit_log_entries.short_description = "Audit log"
 
-    def save_model(self, request, obj, form, change):   # save hook
-        previous_status = None                          # track old status
-        if change and obj.pk:                           # if editing
+    def save_model(self, request, obj, form, change):
+        previous_status = None
+        if change and obj.pk:
             previous_status = Incident.objects.filter(pk=obj.pk).values_list("status", flat=True).first()
-        if not obj.created_by:                          # set creator once
+        if not obj.created_by:
             obj.created_by = request.user
-        super().save_model(request, obj, form, change)  # normal save
-        if not change:                                  # created new incident
+        super().save_model(request, obj, form, change)
+        if not change:
             log_admin_action(
                 request.user,
                 AuditLog.ACTION_CREATE,
@@ -299,9 +317,10 @@ class IncidentAdmin(admin.ModelAdmin):        # admin configuration
                 build_audit_message(request.user, "Incident created"),
             )
             return
-        if previous_status and previous_status != obj.status:  # status changed
+
+        if previous_status and previous_status != obj.status:
             log_status_change(request.user, obj, previous_status, obj.status)
-        else:                                           # no status change
+        else:
             log_admin_action(
                 request.user,
                 AuditLog.ACTION_UPDATE,
@@ -314,16 +333,18 @@ class IncidentAdmin(admin.ModelAdmin):        # admin configuration
 
 **File: `BanglaCERT/auditlog/admin.py`**
 ```python
-from django.contrib import admin               # import admin tools
-from django.urls import reverse                # build admin link URLs
-from django.utils import timezone              # format local timestamp
-from django.utils.html import format_html      # safe HTML output
+from django.contrib import admin
+from django.urls import reverse
+from django.utils import timezone
+from django.utils.html import format_html
 
-from incidents.models import Incident          # import Incident to show title/type
-from .models import AuditLog                   # import AuditLog model
+from incidents.models import Incident
 
-@admin.register(AuditLog)                      # register AuditLog in admin
-class AuditLogAdmin(admin.ModelAdmin):         # admin configuration
+from .models import AuditLog
+
+
+@admin.register(AuditLog)
+class AuditLogAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "action",
@@ -332,23 +353,23 @@ class AuditLogAdmin(admin.ModelAdmin):         # admin configuration
         "changed_by",
         "changed_at",
     )
-    list_filter = ("action", "object_type")    # filter by action and object type
+    list_filter = ("action", "object_type")
     search_fields = ("object_type", "object_id", "user__username", "message")
-    ordering = ("-created_at",)                # newest first
+    ordering = ("-created_at",)
 
-    def has_add_permission(self, request):     # no one can add logs manually
+    def has_add_permission(self, request):
         return False
 
-    def has_change_permission(self, request, obj=None):  # no edits
+    def has_change_permission(self, request, obj=None):
         return False
 
-    def has_delete_permission(self, request, obj=None):  # no deletes
+    def has_delete_permission(self, request, obj=None):
         return False
 
-    def has_view_permission(self, request, obj=None):    # staff can view
+    def has_view_permission(self, request, obj=None):
         return request.user.is_staff
 
-    def incident_type(self, obj):             # show Incident category
+    def incident_type(self, obj):
         if obj.object_type != "Incident":
             return obj.object_type
         incident = Incident.objects.filter(id=obj.object_id).first()
@@ -356,7 +377,7 @@ class AuditLogAdmin(admin.ModelAdmin):         # admin configuration
 
     incident_type.short_description = "Incident Type"
 
-    def incident_title_link(self, obj):       # clickable Incident title
+    def incident_title_link(self, obj):
         if obj.object_type != "Incident":
             return str(obj.object_id)
         incident = Incident.objects.filter(id=obj.object_id).first()
@@ -367,40 +388,39 @@ class AuditLogAdmin(admin.ModelAdmin):         # admin configuration
 
     incident_title_link.short_description = "Incident Title"
 
-    def changed_by(self, obj):                # show the admin username
+    def changed_by(self, obj):
         return obj.user.username if obj.user else "Unknown"
 
     changed_by.short_description = "Changed by"
 
-    def changed_at(self, obj):                # formatted timestamp
+    def changed_at(self, obj):
         return timezone.localtime(obj.created_at).strftime("%Y-%m-%d %H:%M:%S %Z")
 
     changed_at.short_description = "Timestamp"
     changed_at.admin_order_field = "created_at"
-
 ```
 
 ---
 
 **File: `BanglaCERT/templates/admin/base_site.html`**
 ```html
-{% extends "admin/base.html" %}                  <!-- use Django admin base layout -->
-{% load static %}                                <!-- enable static file usage -->
+{% extends "admin/base.html" %}
+{% load static %}
 
-{% block title %}BanglaCERT Admin{% endblock %}   <!-- browser tab title -->
+{% block title %}BanglaCERT Admin{% endblock %}
 
-{% block branding %}                              <!-- header branding -->
-<h1 id="site-name">                               <!-- admin site heading -->
-    <a href="{% url 'admin:index' %}">            <!-- link to admin home -->
+{% block branding %}
+<h1 id="site-name">
+    <a href="{% url 'admin:index' %}">
         <img class="admin-logo" src="{% static 'admin/img/BanglaCERT-logo.png' %}" alt="BanglaCERT logo">
-        BanglaCERT Admin                           <!-- text next to logo -->
+        BanglaCERT Admin
     </a>
 </h1>
 {% endblock %}
 
-{% block extrastyle %}                            <!-- extra CSS -->
-{{ block.super }}                                 <!-- keep default admin CSS -->
-<link rel="stylesheet" href="{% static 'admin/custom_admin.css' %}">
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'admin/custom_admin.css' %}?v=20260223">
 {% endblock %}
 ```
 
@@ -408,22 +428,25 @@ class AuditLogAdmin(admin.ModelAdmin):         # admin configuration
 
 **File: `BanglaCERT/templates/admin/login.html`**
 ```html
-{% extends "admin/base_site.html" %}              <!-- reuse base admin layout -->
-{% load i18n static %}                            <!-- i18n + static helpers -->
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
 
 {% block bodyclass %}{{ block.super }} custom-admin-login{% endblock %}
 
-{% block branding %}{% endblock %}                <!-- remove default branding -->
-{% block nav-breadcrumbs %}{% endblock %}         <!-- hide breadcrumbs -->
-{% block nav-sidebar %}{% endblock %}             <!-- hide sidebar -->
-{% block content_title %}{% endblock %}           <!-- hide default title -->
+{% block branding %}{% endblock %}
+
+{% block nav-breadcrumbs %}{% endblock %}
+
+{% block nav-sidebar %}{% endblock %}
+
+{% block content_title %}{% endblock %}
 
 {% block content %}
-<div class="admin-login-page">                    <!-- page wrapper -->
-    <div class="login-hero">                      <!-- banner area -->
-        <div class="hero-inner">                  <!-- banner inner layout -->
-            <div class="hero-brand">              <!-- logo/text group -->
-                <div class="brand-row">           <!-- row container -->
+<div class="admin-login-page">
+    <div class="login-hero">
+        <div class="hero-inner">
+            <div class="hero-brand">
+                <div class="brand-row">
                     <img class="brand-logo" src="{% static 'admin/img/BanglaCERT-logo.png' %}" alt="BanglaCERT logo">
                 </div>
                 <div class="brand-subtitle">Cyber Incident Reporting &amp; Awareness Portal</div>
@@ -431,25 +454,25 @@ class AuditLogAdmin(admin.ModelAdmin):         # admin configuration
         </div>
     </div>
 
-    <div class="login-card">                      <!-- login box -->
-        <h2>Sign In to Your Account</h2>          <!-- heading -->
+    <div class="login-card">
+        <h2>Sign In to Your Account</h2>
         <p class="login-subtitle">Sign in to manage cyber incidents.</p>
 
-        {% if form.errors %}                      <!-- error message -->
+        {% if form.errors %}
         <p class="errornote">{% trans "Please correct the error below." %}</p>
         {% endif %}
 
-        {% if form.non_field_errors %}            <!-- non-field errors -->
+        {% if form.non_field_errors %}
         <div class="form-error">
             {{ form.non_field_errors }}
         </div>
         {% endif %}
 
         <form method="post" action="{{ app_path }}" class="login-form">
-            {% csrf_token %}                      <!-- CSRF protection -->
+            {% csrf_token %}
             <input type="hidden" name="next" value="{{ next }}">
 
-            <div class="form-row">                <!-- username row -->
+            <div class="form-row">
                 <label for="{{ form.username.id_for_label }}">UserID</label>
                 <input
                     type="text"
@@ -460,10 +483,10 @@ class AuditLogAdmin(admin.ModelAdmin):         # admin configuration
                     autocomplete="username"
                     required
                 >
-                {{ form.username.errors }}        <!-- username errors -->
+                {{ form.username.errors }}
             </div>
 
-            <div class="form-row">                <!-- password row -->
+            <div class="form-row">
                 <label for="{{ form.password.id_for_label }}">Password</label>
                 <input
                     type="password"
@@ -473,14 +496,14 @@ class AuditLogAdmin(admin.ModelAdmin):         # admin configuration
                     autocomplete="current-password"
                     required
                 >
-                {{ form.password.errors }}        <!-- password errors -->
+                {{ form.password.errors }}
             </div>
 
-            <div class="form-row submit-row">     <!-- submit row -->
+            <div class="form-row submit-row">
                 <input type="submit" value="{% trans 'Login' %}">
             </div>
 
-            {% if password_reset_url %}           <!-- password reset link -->
+            {% if password_reset_url %}
             <div class="password-reset-link">
                 <a href="{{ password_reset_url }}">{% trans "Forgotten your password or username?" %}</a>
             </div>
@@ -495,70 +518,75 @@ class AuditLogAdmin(admin.ModelAdmin):         # admin configuration
 
 **File: `BanglaCERT/static/admin/custom_admin.css`**
 ```css
-:root {                                         /* CSS variables */
-    --brand-blue: #11436a;                      /* primary blue */
-    --brand-blue-dark: #0b2d4b;                 /* dark blue */
-    --brand-blue-light: #1c5d92;                /* light blue */
-    --brand-gray: #eef1f6;                      /* light gray */
-    --brand-card: #ffffff;                      /* card background */
-    --brand-text: #1e2a35;                      /* main text color */
-    --brand-muted: #6a7785;                     /* muted text color */
-    --brand-green: #1f7a3a;                     /* green accent */
-    --brand-red: #b32020;                       /* red accent */
-}                                               /* end variables */
+:root {
+    --brand-blue: #11436a;
+    --brand-blue-dark: #0b2d4b;
+    --brand-blue-light: #1c5d92;
+    --brand-gray: #eef1f6;
+    --brand-card: #ffffff;
+    --brand-text: #1e2a35;
+    --brand-muted: #6a7785;
+    --brand-green: #1f7a3a;
+    --brand-red: #b32020;
+}
 
-#header {                                       /* admin header bar */
+/* Admin header (kept subtle for non-login pages) */
+#header {
     background: linear-gradient(90deg, var(--brand-blue-dark), var(--brand-blue));
 }
 
-#header #site-name a {                           /* header link */
+#header #site-name a {
     color: #ffffff;
 }
 
-.admin-logo {                                   /* header logo size */
+.admin-logo {
     height: 26px;
     vertical-align: middle;
     margin-right: 8px;
 }
 
-.custom-admin-login #header,                    /* hide header on login */
+/* Hide header + breadcrumbs on login page */
+.custom-admin-login #header,
 .custom-admin-login nav[aria-label="Breadcrumbs"] {
     display: none;
 }
 
-.custom-admin-login #nav-sidebar,               /* hide sidebar on login */
+/* Hide admin sidebar + toggle on login page */
+.custom-admin-login #nav-sidebar,
 .custom-admin-login #toggle-nav-sidebar {
     display: none;
 }
 
-#nav-sidebar #nav-filter,                       /* hide sidebar filter */
+/* Hide admin sidebar filter (search box) */
+#nav-sidebar #nav-filter,
 #nav-sidebar .nav-filter {
     display: none;
 }
 
-.custom-admin-login {                           /* login page background */
+/* Login page layout */
+.custom-admin-login {
     background: radial-gradient(circle at top, #f6f8fb 0%, #e6ebf3 45%, #dbe2ee 100%);
     color: var(--brand-text);
 }
 
-.custom-admin-login #container {                /* full width container */
+.custom-admin-login #container {
     width: 100%;
     max-width: none;
     margin: 0;
     padding: 0;
 }
 
-.custom-admin-login #content {                  /* remove extra padding */
+.custom-admin-login #content {
     padding: 0;
 }
 
-.admin-login-page {                             /* full height layout */
+.admin-login-page {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
 }
 
-.login-hero {                                   /* banner section */
+.login-hero {
     background: url("img/banner.png") center/cover no-repeat;
     color: #ffffff;
     padding: 28px 40px;
@@ -567,7 +595,7 @@ class AuditLogAdmin(admin.ModelAdmin):         # admin configuration
     min-height: 200px;
 }
 
-.hero-inner {                                   /* inner banner layout */
+.hero-inner {
     position: relative;
     z-index: 1;
     display: flex;
@@ -578,55 +606,62 @@ class AuditLogAdmin(admin.ModelAdmin):         # admin configuration
     margin: 0 auto;
 }
 
-.hero-brand {                                   /* brand overlay */
+.hero-brand {
     position: relative;
     right: 149px;
     width: 865px;
     display: inline-block;
     padding: 10px 16px;
+    /* border-radius: 8px; */
     background: rgba(0, 0, 0, 0.1);
 }
 
-.hero-brand .brand-title {                      /* title text */
+.hero-brand .brand-title {
     font-size: 36px;
     font-weight: 700;
     letter-spacing: 0.5px;
 }
 
-.brand-logo {                                   /* logo size */
-    width: 70px;
+.brand-logo {
+    width: 275px;
     height: auto;
-    margin-right: 14px;
-    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.25));
+    margin-left: 19px;
+    margin-right: 0;
+    filter: drop-shadow(0 4px 12px rgba(255, 255, 255, 0.95));
 }
 
-.brand-row {                                    /* logo row */
+.brand-row {
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
-.brand-bangla {                                 /* Bangla text color */
+.brand-bangla {
     color: #d9f5e1;
 }
 
-.brand-cert {                                   /* CERT text color */
+.brand-cert {
     color: #ffb3b3;
 }
 
-.brand-subtitle {                               /* subtitle text */
-    margin-top: 6px;
-    font-size: 16px;
+.brand-subtitle {
+    margin-top: -85px;
+    margin-left: 140px;
+    font-size: 12px;
+    line-height: 1.25;
+    font-weight: 600;
     color: #e6eef7;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+    max-width: 430px;
 }
 
-.hero-icons {                                   /* unused icons block */
+.hero-icons {
     display: flex;
     align-items: center;
     gap: 16px;
 }
 
-.hero-icon-circle {                             /* icon circle */
+.hero-icon-circle {
     width: 72px;
     height: 72px;
     border-radius: 50%;
@@ -636,12 +671,12 @@ class AuditLogAdmin(admin.ModelAdmin):         # admin configuration
     place-items: center;
 }
 
-.hero-icon-large {                              /* larger icon circle */
+.hero-icon-large {
     width: 96px;
     height: 96px;
 }
 
-.hero-lock {                                    /* lock icon shape */
+.hero-lock {
     width: 26px;
     height: 24px;
     border: 3px solid #ffffff;
@@ -649,7 +684,7 @@ class AuditLogAdmin(admin.ModelAdmin):         # admin configuration
     position: relative;
 }
 
-.hero-lock::before {                            /* lock top */
+.hero-lock::before {
     content: "";
     position: absolute;
     width: 18px;
@@ -663,7 +698,7 @@ class AuditLogAdmin(admin.ModelAdmin):         # admin configuration
     background: transparent;
 }
 
-.login-card {                                   /* login card */
+.login-card {
     max-width: 520px;
     margin: 32px auto 64px;
     padding: 30px 34px 34px;
@@ -673,26 +708,26 @@ class AuditLogAdmin(admin.ModelAdmin):         # admin configuration
     box-shadow: 0 18px 48px rgba(17, 39, 63, 0.2);
 }
 
-.login-card h2 {                                /* card title */
+.login-card h2 {
     margin: 0;
     font-size: 24px;
     text-align: center;
 }
 
-.login-subtitle {                               /* card subtitle */
+.login-subtitle {
     text-align: center;
     color: var(--brand-muted);
     margin: 8px 0 24px;
 }
 
-.login-form .form-row {                         /* spacing between rows */
+.login-form .form-row {
     margin-bottom: 16px;
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 
-.login-form label {                             /* label style */
+.login-form label {
     font-weight: 600;
     display: inline-block;
     align-self: flex-start;
@@ -702,7 +737,7 @@ class AuditLogAdmin(admin.ModelAdmin):         # admin configuration
     color: #3a4653;
 }
 
-.login-form input[type="text"],                 /* text field style */
+.login-form input[type="text"],
 .login-form input[type="password"] {
     height: 44px;
     border-radius: 6px;
@@ -713,11 +748,11 @@ class AuditLogAdmin(admin.ModelAdmin):         # admin configuration
     box-shadow: inset 0 1px 2px rgba(16, 24, 40, 0.06);
 }
 
-.login-form input::placeholder {                /* placeholder color */
+.login-form input::placeholder {
     color: #8a95a6;
 }
 
-.login-form input[type="submit"] {              /* submit button */
+.login-form input[type="submit"] {
     width: 100%;
     height: 44px;
     border: none;
@@ -728,17 +763,68 @@ class AuditLogAdmin(admin.ModelAdmin):         # admin configuration
     font-weight: 600;
     cursor: pointer;
 }
+
+.login-form input[type="submit"]:hover {
+    opacity: 0.95;
+}
+
+.errornote,
+.form-error {
+    background: #fff2f2;
+    border: 1px solid #f1bcbc;
+    color: #9b1b1b;
+    padding: 10px 12px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+}
+
+.password-reset-link {
+    margin-top: 14px;
+    text-align: center;
+}
+
+.password-reset-link a {
+    color: var(--brand-blue);
+}
+
+@media (max-width: 768px) {
+    .hero-inner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .brand-logo {
+        width: 215px;
+        margin-left: 0;
+    }
+
+    .brand-subtitle {
+        margin-top: 8px;
+        margin-left: 0;
+        font-size: 14px;
+        max-width: none;
+    }
+
+    .hero-icons {
+        display: none;
+    }
+
+    .login-card {
+        margin: 24px 16px 48px;
+        padding: 24px;
+    }
+}
 ```
 
 ---
 
-**File: `BanglaCERT/BanglaCERT/settings.py`**
+**File: `BanglaCERT/BanglaCERT/settings.py` (relevant sections)**
 ```python
-TEMPLATES = [                                   # template engine settings
+TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],       # load templates from project-level folder
-        'APP_DIRS': True,                       # also load templates from each app
+        'DIRS': [BASE_DIR / 'templates'],
+        'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.request',
@@ -748,10 +834,9 @@ TEMPLATES = [                                   # template engine settings
         },
     },
 ]
-
-STATIC_URL = '/static/'                          # base URL for static files
-STATICFILES_DIRS = [                            # extra static file folders
-    BASE_DIR / 'static',                         # project-level static
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
 ]
 ```
 
@@ -759,27 +844,32 @@ STATICFILES_DIRS = [                            # extra static file folders
 
 **Static Files Used**
 1. `BanglaCERT/static/admin/img/banner.png`  
-   Used as the login page banner background.
+   Used as the login-page banner background.
 2. `BanglaCERT/static/admin/img/BanglaCERT-logo.png`  
-   Used in the admin header and login banner.
+   Used in admin header and login page.
 
 ---
 
-**Admin URLs (How To Access)**
+**Admin URLs**
 1. Admin login: `http://127.0.0.1:8000/admin/`
-2. Audit logs: Admin sidebar → **Audit Logs**
-3. Incidents: Admin sidebar → **Incidents**
+2. Audit logs: Admin sidebar -> **Audit Logs**
+3. Incidents: Admin sidebar -> **Incidents**
 
 ---
 
 **How To Verify (Admin UI)**
-1. Open **Incidents** in Django admin.
-2. Click any incident and change the **Status** field.
-3. Save the incident.
-4. In the same incident page, check **Audit log** section. You should see time, action, user, and message.
-5. Open **Audit Logs** from sidebar.
-6. Confirm the latest row shows **Changed by** and **Timestamp** for each log entry.
+1. Login as `systemadmin40329`.
+2. Open **Incidents**.
+3. Confirm there is no **Add Incident** button.
+4. Open an existing incident:
+   - `title`, `description`, and `incident_date` should be read-only.
+   - `status` should be editable.
+5. Change `status` and save.
+6. Check incident's **Audit log** field: entries should include action, user, timestamp, and message text.
+7. Open **Audit Logs**:
+   - List shows `Changed by` and `Timestamp` columns.
+   - There is no `Status Update Details` column.
 
 ---
 
-If you want me to update this file later (after new changes), just tell me and I will regenerate it.
+
