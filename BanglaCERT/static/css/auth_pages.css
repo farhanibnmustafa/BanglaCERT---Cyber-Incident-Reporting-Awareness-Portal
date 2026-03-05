@@ -355,7 +355,7 @@ body.auth-page {
     }
 
     .auth-shell {
-        min-height: auto;
+        min-height: 0;
         margin: -6px auto 12px;
         justify-content: flex-start;
     }
@@ -366,7 +366,7 @@ body.auth-page {
 
     .auth-card-login,
     .auth-card-register {
-        min-height: auto;
+        min-height: 0;
     }
 
     .brand-logo {

@@ -32,6 +32,8 @@ class Incident(models.Model):
     description = models.TextField()
     incident_date = models.DateField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    is_anonymous = models.BooleanField(default=False)
+    reporter_email = models.EmailField(blank=True, default="")
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="incidents_created"
     )
@@ -40,6 +42,12 @@ class Incident(models.Model):
 
     def __str__(self) -> str:
         return f"{self.title} ({self.status})"
+
+    @property
+    def reporter_display_name(self) -> str:
+        if self.is_anonymous or not self.created_by:
+            return "Anonymous"
+        return self.created_by.username
 
 
 class IncidentComment(models.Model):
