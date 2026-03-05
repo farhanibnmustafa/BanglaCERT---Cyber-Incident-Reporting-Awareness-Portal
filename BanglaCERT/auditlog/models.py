@@ -6,6 +6,7 @@ class AuditLog(models.Model):
     ACTION_CREATE = "CREATE"
     ACTION_UPDATE = "UPDATE"
     ACTION_UNDER_REVIEW = "UNDER_REVIEW"
+    ACTION_REQUEST_CLARIFICATION = "REQ_CLARIFICATION"
     ACTION_APPROVE = "APPROVE"
     ACTION_REJECT = "REJECT"
 
@@ -13,6 +14,7 @@ class AuditLog(models.Model):
         (ACTION_CREATE, "Create"),
         (ACTION_UPDATE, "Update"),
         (ACTION_UNDER_REVIEW, "Under Review"),
+        (ACTION_REQUEST_CLARIFICATION, "Request Clarification"),
         (ACTION_APPROVE, "Approve"),
         (ACTION_REJECT, "Reject"),
     ]
