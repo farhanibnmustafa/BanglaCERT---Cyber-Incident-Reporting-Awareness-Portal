@@ -1,0 +1,53 @@
+{% extends "base/site.html" %}
+
+{% block title %}Incident #{{ incident.id }} | BanglaCERT{% endblock %}
+
+{% block content %}
+<h1>Incident #{{ incident.id }}: {{ incident.title }}</h1>
+<p><strong>Status:</strong> <span class="tag">{{ incident.get_status_display }}</span></p>
+<p><strong>Category:</strong> {{ incident.get_category_display }}</p>
+<p><strong>Incident Date:</strong> {{ incident.incident_date }}</p>
+<p><strong>Reported By:</strong> {{ incident.created_by.username|default:"Unknown" }}</p>
+<p><strong>Description</strong><br>{{ incident.description|linebreaksbr }}</p>
+
+<p><a href="{% url 'incidents:my_incidents' %}">Back to my reports</a></p>
+
+<h2>Comments</h2>
+{% if comments %}
+    <table>
+        <thead>
+            <tr>
+                <th>Author</th>
+                <th>Comment</th>
+                <th>Type</th>
+                <th>At</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in comments %}
+                <tr>
+                    <td>{{ item.created_by.username|default:"Unknown" }}</td>
+                    <td>{{ item.comment|linebreaksbr }}</td>
+                    <td>
+                        {% if item.is_admin_note %}
+                            <span class="tag">Admin Note</span>
+                        {% else %}
+                            <span class="tag">Comment</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.created_at }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No comments yet.</p>
+{% endif %}
+
+<h2>Add Comment</h2>
+<form method="post" action="{% url 'incidents:add_comment' incident.id %}">
+    {% csrf_token %}
+    {{ comment_form.as_p }}
+    <button type="submit">Post Comment</button>
+</form>
+{% endblock %}
