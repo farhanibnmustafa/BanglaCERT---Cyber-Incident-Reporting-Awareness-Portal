@@ -4,6 +4,7 @@ This document reflects the **current state as of March 5, 2026**.
 
 ---
 
+<<<<<<< HEAD
 **Overview (What Is Implemented Now)**
 1. `Incident` model stores incident reports with status lifecycle and creator metadata.
 2. `AuditLog` model stores admin actions on incidents.
@@ -32,6 +33,16 @@ Operational note:
 - Related references were cleaned during deletion:
   - `django_admin_log` rows for those users were deleted.
   - `auditlog_auditlog.user_id` and `incidents_incident.created_by_id` references were set to `NULL` where applicable.
+=======
+**Overview (What Was Implemented)**
+1. Added an **Incident** model to store incident reports.
+2. Added an **AuditLog** model to record admin actions (create/update/approve/reject/under review).
+3. Built **admin actions and permissions** so admins can change status and logs are recorded.
+4. Customized the **Django admin login page** (banner + card UI).
+5. Customized admin **branding** and CSS.
+6. Connected templates and static folders in `settings.py`.
+7. Improved audit logs to show **status change details** with **who changed** and **when** (timestamp).
+>>>>>>> 691e920ef1f1213bcdbbe6f31796420414436752
 
 ---
 
@@ -119,10 +130,17 @@ class AuditLog(models.Model):
 
 **File: `BanglaCERT/incidents/admin.py`**
 ```python
+<<<<<<< HEAD
 from django import forms
 from django.contrib import admin
 from django.utils import timezone
 from django.utils.html import format_html, format_html_join
+=======
+from django import forms                       # import Django forms for custom widget
+from django.contrib import admin               # import admin site tools
+from django.utils import timezone              # timezone helpers for readable timestamps
+from django.utils.html import format_html, format_html_join  # safe HTML for audit log
+>>>>>>> 691e920ef1f1213bcdbbe6f31796420414436752
 
 from auditlog.models import AuditLog
 
@@ -136,6 +154,7 @@ def is_incident_manager(user):
     return user.is_authenticated and user.username == INCIDENT_MANAGER_USERNAME
 
 
+<<<<<<< HEAD
 def log_admin_action(user, action, incident, message=""):
     AuditLog.objects.create(
         user=user,
@@ -201,6 +220,64 @@ def mark_under_review(modeladmin, request, queryset):
     for incident in queryset:
         previous_status = incident.status
         incident.status = Incident.STATUS_UNDER_REVIEW
+=======
+def get_status_action(new_status):             # map status to audit action type
+    if new_status == Incident.STATUS_VERIFIED:
+        return AuditLog.ACTION_APPROVE
+    if new_status == Incident.STATUS_REJECTED:
+        return AuditLog.ACTION_REJECT
+    if new_status == Incident.STATUS_UNDER_REVIEW:
+        return AuditLog.ACTION_UNDER_REVIEW
+    return AuditLog.ACTION_UPDATE
+
+def get_status_label(status_value):            # convert DB value to human label
+    return dict(Incident.STATUS_CHOICES).get(status_value, status_value)
+
+def get_actor_context(user):                   # common actor + time details
+    changed_by = user.username if user else "Unknown"
+    changed_at = timezone.localtime(timezone.now()).strftime("%Y-%m-%d %H:%M:%S %Z")
+    return changed_by, changed_at
+
+def build_audit_message(user, detail):         # generic audit message with actor/time
+    changed_by, changed_at = get_actor_context(user)
+    return f"{detail} by {changed_by} at {changed_at}."
+
+def build_status_change_message(user, previous_status, new_status):  # full status change message
+    return build_audit_message(
+        user,
+        (
+            f"Status changed from {get_status_label(previous_status)} "
+            f"to {get_status_label(new_status)}"
+        ),
+    )
+
+def log_status_change(user, incident, previous_status, new_status):  # single helper for status logs
+    action = get_status_action(new_status)
+    message = build_status_change_message(user, previous_status, new_status)
+    log_admin_action(user, action, incident, message)
+
+@admin.action(description="Approve selected incidents")  # admin action label
+def approve_incidents(modeladmin, request, queryset):    # approve action function
+    for incident in queryset:                 # loop each selected incident
+        previous_status = incident.status     # keep old status for log
+        incident.status = Incident.STATUS_VERIFIED  # set to verified
+        incident.save(update_fields=["status", "updated_at"])  # save status only
+        log_status_change(request.user, incident, previous_status, incident.status)
+
+@admin.action(description="Mark selected incidents as Under Review")  # action label
+def mark_under_review(modeladmin, request, queryset):     # under review action
+    for incident in queryset:                 # loop each incident
+        previous_status = incident.status     # keep old status for log
+        incident.status = Incident.STATUS_UNDER_REVIEW    # set status
+        incident.save(update_fields=["status", "updated_at"])
+        log_status_change(request.user, incident, previous_status, incident.status)
+
+@admin.action(description="Reject selected incidents")    # action label
+def reject_incidents(modeladmin, request, queryset):      # reject action
+    for incident in queryset:                 # loop each incident
+        previous_status = incident.status     # keep old status for log
+        incident.status = Incident.STATUS_REJECTED        # set status
+>>>>>>> 691e920ef1f1213bcdbbe6f31796420414436752
         incident.save(update_fields=["status", "updated_at"])
         log_status_change(request.user, incident, previous_status, incident.status)
 
@@ -243,6 +320,7 @@ class IncidentAdmin(admin.ModelAdmin):
         # On view/edit: show status + created_by
         return base_fields + ("status", "created_by", "created_at", "updated_at", "audit_log_entries")
 
+<<<<<<< HEAD
     def get_readonly_fields(self, request, obj=None):
         readonly = ["audit_log_entries"]
         # On edit, lock core incident details and metadata.
@@ -266,6 +344,23 @@ class IncidentAdmin(admin.ModelAdmin):
     def has_change_permission(self, request, obj=None):
         # Any staff can change incidents (including incidentadmin229)
         return request.user.is_authenticated and request.user.is_staff
+=======
+    def get_readonly_fields(self, request, obj=None):  # fields that cannot be edited
+        readonly = ["audit_log_entries"]      # audit log is read‑only
+        if obj:                               # if editing existing incident
+            readonly.extend([                 # lock core incident details + metadata
+                "title",
+                "description",
+                "incident_date",
+                "created_by",
+                "created_at",
+                "updated_at",
+            ])
+        return readonly
+
+    def has_add_permission(self, request):    # creation is disabled in admin
+        return False                           # no admin can create incidents
+>>>>>>> 691e920ef1f1213bcdbbe6f31796420414436752
 
     def has_delete_permission(self, request, obj=None):
         # Only systemadmin40329 can delete incidents
@@ -308,8 +403,13 @@ class IncidentAdmin(admin.ModelAdmin):
             previous_status = Incident.objects.filter(pk=obj.pk).values_list("status", flat=True).first()
         if not obj.created_by:
             obj.created_by = request.user
+<<<<<<< HEAD
         super().save_model(request, obj, form, change)
         if not change:
+=======
+        super().save_model(request, obj, form, change)  # normal save
+        if not change:                                  # created new incident
+>>>>>>> 691e920ef1f1213bcdbbe6f31796420414436752
             log_admin_action(
                 request.user,
                 AuditLog.ACTION_CREATE,
@@ -317,10 +417,16 @@ class IncidentAdmin(admin.ModelAdmin):
                 build_audit_message(request.user, "Incident created"),
             )
             return
+<<<<<<< HEAD
 
         if previous_status and previous_status != obj.status:
             log_status_change(request.user, obj, previous_status, obj.status)
         else:
+=======
+        if previous_status and previous_status != obj.status:  # status changed
+            log_status_change(request.user, obj, previous_status, obj.status)
+        else:                                           # no status change
+>>>>>>> 691e920ef1f1213bcdbbe6f31796420414436752
             log_admin_action(
                 request.user,
                 AuditLog.ACTION_UPDATE,
@@ -333,18 +439,30 @@ class IncidentAdmin(admin.ModelAdmin):
 
 **File: `BanglaCERT/auditlog/admin.py`**
 ```python
+<<<<<<< HEAD
 from django.contrib import admin
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
+=======
+from django.contrib import admin               # import admin tools
+from django.urls import reverse                # build admin link URLs
+from django.utils import timezone              # format local timestamp
+from django.utils.html import format_html      # safe HTML output
+>>>>>>> 691e920ef1f1213bcdbbe6f31796420414436752
 
 from incidents.models import Incident
 
+<<<<<<< HEAD
 from .models import AuditLog
 
 
 @admin.register(AuditLog)
 class AuditLogAdmin(admin.ModelAdmin):
+=======
+@admin.register(AuditLog)                      # register AuditLog in admin
+class AuditLogAdmin(admin.ModelAdmin):         # admin configuration
+>>>>>>> 691e920ef1f1213bcdbbe6f31796420414436752
     list_display = (
         "id",
         "action",
@@ -353,7 +471,11 @@ class AuditLogAdmin(admin.ModelAdmin):
         "changed_by",
         "changed_at",
     )
+<<<<<<< HEAD
     list_filter = ("action", "object_type")
+=======
+    list_filter = ("action", "object_type")    # filter by action and object type
+>>>>>>> 691e920ef1f1213bcdbbe6f31796420414436752
     search_fields = ("object_type", "object_id", "user__username", "message")
     ordering = ("-created_at",)
 
@@ -393,11 +515,19 @@ class AuditLogAdmin(admin.ModelAdmin):
 
     changed_by.short_description = "Changed by"
 
+<<<<<<< HEAD
     def changed_at(self, obj):
+=======
+    def changed_at(self, obj):                # formatted timestamp
+>>>>>>> 691e920ef1f1213bcdbbe6f31796420414436752
         return timezone.localtime(obj.created_at).strftime("%Y-%m-%d %H:%M:%S %Z")
 
     changed_at.short_description = "Timestamp"
     changed_at.admin_order_field = "created_at"
+<<<<<<< HEAD
+=======
+
+>>>>>>> 691e920ef1f1213bcdbbe6f31796420414436752
 ```
 
 ---
@@ -834,9 +964,16 @@ TEMPLATES = [
         },
     },
 ]
+<<<<<<< HEAD
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
+=======
+
+STATIC_URL = '/static/'                          # base URL for static files
+STATICFILES_DIRS = [                            # extra static file folders
+    BASE_DIR / 'static',                         # project-level static
+>>>>>>> 691e920ef1f1213bcdbbe6f31796420414436752
 ]
 ```
 
@@ -858,6 +995,7 @@ STATICFILES_DIRS = [
 ---
 
 **How To Verify (Admin UI)**
+<<<<<<< HEAD
 1. Login as `systemadmin40329`.
 2. Open **Incidents**.
 3. Confirm there is no **Add Incident** button.
@@ -873,3 +1011,15 @@ STATICFILES_DIRS = [
 ---
 
 
+=======
+1. Open **Incidents** in Django admin.
+2. Click any incident and change the **Status** field.
+3. Save the incident.
+4. In the same incident page, check **Audit log** section. You should see time, action, user, and message.
+5. Open **Audit Logs** from sidebar.
+6. Confirm the latest row shows **Changed by** and **Timestamp** for each log entry.
+
+---
+
+If you want me to update this file later (after new changes), just tell me and I will regenerate it.
+>>>>>>> 691e920ef1f1213bcdbbe6f31796420414436752
