@@ -29,6 +29,9 @@ def report_incident(request):
         if form.is_valid():
             incident = form.save(commit=False)
             incident.created_by = request.user
+            incident.is_anonymous = False
+            if request.user.email:
+                incident.reporter_email = request.user.email
             incident.save()
             messages.success(request, "Incident submitted successfully.")
             return redirect("incidents:detail", incident_id=incident.id)
