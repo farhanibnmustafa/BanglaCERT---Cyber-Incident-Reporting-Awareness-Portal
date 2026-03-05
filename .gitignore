@@ -1,5 +1,6 @@
 # Python bytecode/cache
 __pycache__/
+
 *.py[cod]
 *$py.class
 
@@ -31,3 +32,5 @@ htmlcov/
 .DS_Store
 .idea/
 .vscode/
+
+*.pyc
