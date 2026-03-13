@@ -1,8 +1,10 @@
 from django import forms
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.utils import timezone
 from django.utils.html import format_html, format_html_join
 
 from auditlog.models import AuditLog
+from notifications.services import notify_incident_status_change_with_reason
 
 from .models import Incident
 
@@ -24,28 +26,101 @@ def log_admin_action(user, action, incident, message=""):
     )
 
 
+def get_status_action(new_status):
+    if new_status == Incident.STATUS_VERIFIED:
+        return AuditLog.ACTION_APPROVE
+    if new_status == Incident.STATUS_REJECTED:
+        return AuditLog.ACTION_REJECT
+    if new_status == Incident.STATUS_UNDER_REVIEW:
+        return AuditLog.ACTION_UNDER_REVIEW
+    return AuditLog.ACTION_UPDATE
+
+
+def get_status_label(status_value):
+    return dict(Incident.STATUS_CHOICES).get(status_value, status_value)
+
+
+def get_actor_context(user):
+    changed_by = user.username if user else "Unknown"
+    changed_at = timezone.localtime(timezone.now()).strftime("%Y-%m-%d %H:%M:%S %Z")
+    return changed_by, changed_at
+
+
+def build_audit_message(user, detail):
+    changed_by, changed_at = get_actor_context(user)
+    return f"{detail} by {changed_by} at {changed_at}."
+
+
+def build_status_change_message(user, previous_status, new_status):
+    return build_audit_message(
+        user,
+        (
+            f"Status changed from {get_status_label(previous_status)} "
+            f"to {get_status_label(new_status)}"
+        ),
+    )
+
+
+def log_status_change(user, incident, previous_status, new_status):
+    action = get_status_action(new_status)
+    message = build_status_change_message(user, previous_status, new_status)
+    log_admin_action(user, action, incident, message)
+
+
+def notify_status_change(incident, previous_status, new_status):
+    return notify_incident_status_change_with_reason(
+        incident=incident,
+        previous_status=previous_status,
+        new_status=new_status,
+    )
+
+
 @admin.action(description="Approve selected incidents")
 def approve_incidents(modeladmin, request, queryset):
     for incident in queryset:
+        previous_status = incident.status
         incident.status = Incident.STATUS_VERIFIED
         incident.save(update_fields=["status", "updated_at"])
-        log_admin_action(request.user, AuditLog.ACTION_APPROVE, incident, "Approved by admin.")
+        log_status_change(request.user, incident, previous_status, incident.status)
+        sent, reason = notify_status_change(incident, previous_status, incident.status)
+        if not sent:
+            modeladmin.message_user(
+                request,
+                f"Status email not sent for Incident #{incident.id}: {reason}",
+                level=messages.WARNING,
+            )
 
 
 @admin.action(description="Mark selected incidents as Under Review")
 def mark_under_review(modeladmin, request, queryset):
     for incident in queryset:
+        previous_status = incident.status
         incident.status = Incident.STATUS_UNDER_REVIEW
         incident.save(update_fields=["status", "updated_at"])
-        log_admin_action(request.user, AuditLog.ACTION_UNDER_REVIEW, incident, "Marked as Under Review by admin.")
+        log_status_change(request.user, incident, previous_status, incident.status)
+        sent, reason = notify_status_change(incident, previous_status, incident.status)
+        if not sent:
+            modeladmin.message_user(
+                request,
+                f"Status email not sent for Incident #{incident.id}: {reason}",
+                level=messages.WARNING,
+            )
 
 
 @admin.action(description="Reject selected incidents")
 def reject_incidents(modeladmin, request, queryset):
     for incident in queryset:
+        previous_status = incident.status
         incident.status = Incident.STATUS_REJECTED
         incident.save(update_fields=["status", "updated_at"])
-        log_admin_action(request.user, AuditLog.ACTION_REJECT, incident, "Rejected by admin.")
+        log_status_change(request.user, incident, previous_status, incident.status)
+        sent, reason = notify_status_change(incident, previous_status, incident.status)
+        if not sent:
+            modeladmin.message_user(
+                request,
+                f"Status email not sent for Incident #{incident.id}: {reason}",
+                level=messages.WARNING,
+            )
 
 
 class IncidentAdminForm(forms.ModelForm):
@@ -60,17 +135,17 @@ class IncidentAdminForm(forms.ModelForm):
 @admin.register(Incident)
 class IncidentAdmin(admin.ModelAdmin):
     form = IncidentAdminForm
-    list_display = ("id", "title", "created_at", "status", "created_by")
+    list_display = ("id", "title", "created_at", "status", "is_anonymous", "submitted_by")
     list_display_links = ("id", "title")
     list_editable = ("status",)
-    list_filter = ("status", "category")
+    list_filter = ("status", "category", "is_anonymous")
     search_fields = ("title", "description")
     actions = None
     actions_on_top = False
     actions_on_bottom = False
 
     def get_fields(self, request, obj=None):
-        base_fields = ("title", "category", "description", "incident_date")
+        base_fields = ("title", "category", "description", "incident_date", "is_anonymous")
         if obj is None:
             # On create: hide status + created_by fields
             return base_fields
@@ -79,14 +154,29 @@ class IncidentAdmin(admin.ModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         readonly = ["audit_log_entries"]
-        # For system admin, keep created_by and timestamps read-only
+        # On edit, lock core incident details and metadata.
         if obj:
-            readonly.extend(["created_by", "created_at", "updated_at"])
+            readonly.extend(
+                [
+                    "title",
+                    "description",
+                    "incident_date",
+                    "is_anonymous",
+                    "created_by",
+                    "created_at",
+                    "updated_at",
+                ]
+            )
         return readonly
 
+    def submitted_by(self, obj):
+        return obj.reporter_display_name
+
+    submitted_by.short_description = "Submitted by"
+
     def has_add_permission(self, request):
-        # Any staff can create incidents
-        return request.user.is_authenticated and request.user.is_staff
+        # Incident creation is disabled in admin for all users.
+        return False
 
     def has_change_permission(self, request, obj=None):
         # Any staff can change incidents (including incidentadmin229)
@@ -115,7 +205,7 @@ class IncidentAdmin(admin.ModelAdmin):
             "<li>{} — <strong>{}</strong> by {}<br><span style='color:#667085'>{}</span></li>",
             (
                 (
-                    log.created_at.strftime("%Y-%m-%d %H:%M"),
+                    timezone.localtime(log.created_at).strftime("%Y-%m-%d %H:%M:%S %Z"),
                     log.get_action_display(),
                     log.user.username if log.user else "Unknown",
                     log.message or "",
@@ -131,26 +221,31 @@ class IncidentAdmin(admin.ModelAdmin):
         previous_status = None
         if change and obj.pk:
             previous_status = Incident.objects.filter(pk=obj.pk).values_list("status", flat=True).first()
-        if not obj.created_by:
+        if not change and not obj.created_by and request.user.is_authenticated and not obj.is_anonymous:
             obj.created_by = request.user
         super().save_model(request, obj, form, change)
         if not change:
-            log_admin_action(request.user, AuditLog.ACTION_CREATE, obj, "Incident created by admin.")
+            log_admin_action(
+                request.user,
+                AuditLog.ACTION_CREATE,
+                obj,
+                build_audit_message(request.user, "Incident created"),
+            )
             return
 
         if previous_status and previous_status != obj.status:
-            if obj.status == Incident.STATUS_VERIFIED:
-                action = AuditLog.ACTION_APPROVE
-                message = f"Status changed from {previous_status} to {obj.status} (approved)."
-            elif obj.status == Incident.STATUS_REJECTED:
-                action = AuditLog.ACTION_REJECT
-                message = f"Status changed from {previous_status} to {obj.status} (rejected)."
-            elif obj.status == Incident.STATUS_UNDER_REVIEW:
-                action = AuditLog.ACTION_UNDER_REVIEW
-                message = f"Status changed from {previous_status} to {obj.status} (under review)."
-            else:
-                action = AuditLog.ACTION_UPDATE
-                message = f"Status changed from {previous_status} to {obj.status}."
-            log_admin_action(request.user, action, obj, message)
+            log_status_change(request.user, obj, previous_status, obj.status)
+            sent, reason = notify_status_change(obj, previous_status, obj.status)
+            if not sent:
+                self.message_user(
+                    request,
+                    f"Status email not sent for Incident #{obj.id}: {reason}",
+                    level=messages.WARNING,
+                )
         else:
-            log_admin_action(request.user, AuditLog.ACTION_UPDATE, obj, "Incident updated by admin.")
+            log_admin_action(
+                request.user,
+                AuditLog.ACTION_UPDATE,
+                obj,
+                build_audit_message(request.user, "Incident updated"),
+            )

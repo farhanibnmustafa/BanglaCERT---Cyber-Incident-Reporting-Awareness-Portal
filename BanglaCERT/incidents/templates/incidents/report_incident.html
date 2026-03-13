@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Cyber Incident</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f7fb;
+            margin: 0;
+            padding: 24px;
+        }
+        .card {
+            max-width: 760px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 10px;
+            padding: 24px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+        }
+        h1 {
+            margin-top: 0;
+            color: #1d2939;
+        }
+        p {
+            color: #475467;
+        }
+        .field {
+            margin-bottom: 16px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        input, select, textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px 12px;
+            border: 1px solid #d0d5dd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .checkbox-row input {
+            width: auto;
+        }
+        .help {
+            color: #667085;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+        .errorlist {
+            margin: 6px 0 0;
+            color: #b42318;
+            padding-left: 18px;
+        }
+        button {
+            border: 0;
+            background: #175cd3;
+            color: #fff;
+            padding: 11px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>Report a Cyber Incident</h1>
+    <p>You can submit this report without logging in. Anonymous reports will not show personal user identity.</p>
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="field">
+            <label for="{{ form.title.id_for_label }}">Title</label>
+            {{ form.title }}
+            {{ form.title.errors }}
+        </div>
+
+        <div class="field">
+            <label for="{{ form.category.id_for_label }}">Category</label>
+            {{ form.category }}
+            {{ form.category.errors }}
+        </div>
+
+        <div class="field">
+            <label for="{{ form.description.id_for_label }}">Description</label>
+            {{ form.description }}
+            {{ form.description.errors }}
+        </div>
+
+        <div class="field">
+            <label for="{{ form.incident_date.id_for_label }}">Incident Date</label>
+            {{ form.incident_date }}
+            {{ form.incident_date.errors }}
+        </div>
+
+        <div class="field">
+            <label for="{{ form.reporter_email.id_for_label }}">Email for Status Updates</label>
+            {{ form.reporter_email }}
+            {{ form.reporter_email.errors }}
+            <div class="help">Used only to notify you when incident status changes.</div>
+        </div>
+
+        <div class="field checkbox-row">
+            {{ form.is_anonymous }}
+            <label for="{{ form.is_anonymous.id_for_label }}">Submit anonymously</label>
+        </div>
+        {{ form.is_anonymous.errors }}
+
+        <button type="submit">Submit Report</button>
+    </form>
+</div>
+</body>
+</html>
