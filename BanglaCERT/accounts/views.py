@@ -11,20 +11,35 @@ def _redirect_by_role(user):
     return redirect("incidents:my_incidents")
 
 
-def login_view(request):
+def _render_login(request, *, staff_only=False):
     if request.user.is_authenticated:
         return _redirect_by_role(request.user)
 
     if request.method == "POST":
-        form = EmailLoginForm(request.POST, request=request)
+        form = EmailLoginForm(request.POST, request=request, staff_only=staff_only)
         if form.is_valid():
             user = form.get_user()
             login(request, user)
             messages.success(request, "Signed in successfully.")
             return _redirect_by_role(user)
     else:
-        form = EmailLoginForm(request=request)
-    return render(request, "accounts/login.html", {"form": form})
+        form = EmailLoginForm(request=request, staff_only=staff_only)
+    return render(
+        request,
+        "accounts/login.html",
+        {
+            "form": form,
+            "staff_login": staff_only,
+        },
+    )
+
+
+def login_view(request):
+    return _render_login(request, staff_only=False)
+
+
+def staff_login_view(request):
+    return _render_login(request, staff_only=True)
 
 
 def register(request):
