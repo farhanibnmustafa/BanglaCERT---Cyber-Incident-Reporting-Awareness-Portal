@@ -90,3 +90,48 @@ class AccountFlowTests(TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertIn("/incidents/mine/", response.url)
+
+    def test_staff_login_page_is_available(self):
+        response = self.client.get(reverse("accounts:staff_login"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Staff Sign In")
+        self.assertNotContains(response, "Create an Account")
+        self.assertContains(response, "User Login")
+
+    def test_root_staff_login_shortcut_redirects_to_accounts_staff_login(self):
+        response = self.client.get("/staff-login/")
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("accounts:staff_login"))
+
+    def test_normal_user_cannot_sign_in_from_staff_login_page(self):
+        User.objects.create_user(
+            username="normal2",
+            email="normal2@example.com",
+            password="pass12345",
+        )
+
+        response = self.client.post(
+            reverse("accounts:staff_login"),
+            {"email": "normal2@example.com", "password": "pass12345"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "This login page is for staff users only.")
+
+    def test_staff_user_can_sign_in_from_staff_login_page(self):
+        User.objects.create_user(
+            username="staff3",
+            email="staff3@example.com",
+            password="pass12345",
+            is_staff=True,
+        )
+
+        response = self.client.post(
+            reverse("accounts:staff_login"),
+            {"email": "staff3@example.com", "password": "pass12345"},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/admin/", response.url)

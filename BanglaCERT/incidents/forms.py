@@ -21,6 +21,37 @@ class IncidentCommentForm(forms.ModelForm):
         }
 
 
+class IncidentStaffFilterForm(forms.Form):
+    q = forms.CharField(
+        required=False,
+        label="Search",
+        widget=forms.TextInput(attrs={"placeholder": "Search title, description, reporter"}),
+    )
+    status = forms.ChoiceField(
+        required=False,
+        choices=[("", "All statuses"), *Incident.STATUS_CHOICES],
+    )
+    category = forms.ChoiceField(
+        required=False,
+        choices=[("", "All categories"), *Incident.CATEGORY_CHOICES],
+    )
+
+
+class IncidentStaffStatusForm(forms.ModelForm):
+    class Meta:
+        model = Incident
+        fields = ("status",)
+
+
+class IncidentStaffCommentForm(forms.ModelForm):
+    class Meta:
+        model = IncidentComment
+        fields = ("comment",)
+        widgets = {
+            "comment": forms.Textarea(attrs={"rows": 4, "placeholder": "Add an internal staff note"}),
+        }
+
+
 class IncidentPublicReportForm(forms.ModelForm):
     class Meta:
         model = Incident
