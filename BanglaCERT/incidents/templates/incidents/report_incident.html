@@ -4,10 +4,46 @@
 
 {% block content %}
 <h1>Report Incident</h1>
-<p class="muted">Submit incident details for review by administrators.</p>
+{% if user.is_authenticated %}
+<p class="muted">Submit incident details for review. You can optionally hide your identity from the incident record.</p>
+{% else %}
+<p class="muted">Submit incident details without logging in. Guest reports are treated as anonymous.</p>
+{% endif %}
 <form method="post">
     {% csrf_token %}
-    {{ form.as_p }}
+    {{ form.non_field_errors }}
+    <p>
+        <label for="{{ form.title.id_for_label }}">Title</label>
+        {{ form.title }}
+        {{ form.title.errors }}
+    </p>
+    <p>
+        <label for="{{ form.category.id_for_label }}">Category</label>
+        {{ form.category }}
+        {{ form.category.errors }}
+    </p>
+    <p>
+        <label for="{{ form.description.id_for_label }}">Description</label>
+        {{ form.description }}
+        {{ form.description.errors }}
+    </p>
+    <p>
+        <label for="{{ form.incident_date.id_for_label }}">Incident Date</label>
+        {{ form.incident_date }}
+        {{ form.incident_date.errors }}
+    </p>
+    <p>
+        <label for="{{ form.reporter_email.id_for_label }}">Email for status updates</label>
+        {{ form.reporter_email }}
+        {{ form.reporter_email.errors }}
+        <span class="muted">{{ form.reporter_email.help_text }}</span>
+    </p>
+    {% if user.is_authenticated %}
+    <p>
+        <label for="{{ form.is_anonymous.id_for_label }}">{{ form.is_anonymous }} Submit anonymously</label>
+        {{ form.is_anonymous.errors }}
+    </p>
+    {% endif %}
     <button type="submit">Submit Report</button>
 </form>
 {% endblock %}

@@ -31,8 +31,8 @@ class Incident(models.Model):
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default="other")
     description = models.TextField()
     incident_date = models.DateField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
     is_anonymous = models.BooleanField(default=False)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
     reporter_email = models.EmailField(blank=True, default="")
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="incidents_created"

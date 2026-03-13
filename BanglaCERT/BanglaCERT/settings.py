@@ -10,10 +10,27 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def _load_env_file(path):
+    if not path.exists():
+        return
+    for raw_line in path.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        os.environ.setdefault(key, value)
+
+
+_load_env_file(BASE_DIR / ".env")
 
 
 # Quick-start development settings - unsuitable for production
@@ -130,3 +147,16 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
+
+# Email settings
+# Configure via environment variables for real delivery.
+EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "true").lower() == "true"
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "farhanibnmustafa@gmail.com")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "cvmmvzpbhnpbmkoi").replace(" ", "").strip()
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "no-reply@banglacert.local")
+
+# Set true to queue status emails in a background thread.
+NOTIFICATION_EMAIL_ASYNC = os.getenv("NOTIFICATION_EMAIL_ASYNC", "false").lower() == "true"

@@ -37,6 +37,25 @@ class IncidentWorkflowTests(TestCase):
         self.assertEqual(incident.created_by, self.user)
         self.assertEqual(incident.status, Incident.STATUS_PENDING)
 
+    def test_guest_user_can_submit_anonymous_report(self):
+        response = self.client.post(
+            reverse("incidents:report"),
+            {
+                "title": "Anonymous Email Scam",
+                "category": "phishing",
+                "description": "Guest submitted phishing report.",
+                "incident_date": "2026-03-02",
+                "reporter_email": "guest@example.com",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("incidents:report_success"))
+        incident = Incident.objects.get(title="Anonymous Email Scam")
+        self.assertIsNone(incident.created_by)
+        self.assertTrue(incident.is_anonymous)
+        self.assertEqual(incident.reporter_email, "guest@example.com")
+
     def test_normal_user_cannot_view_other_users_incident(self):
         own_incident = Incident.objects.create(
             title="Own Incident",
