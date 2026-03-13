@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .forms import IncidentCommentForm, IncidentReportForm
+from .forms import IncidentCommentForm, IncidentPublicReportForm, IncidentReportForm
 from .models import Incident
 
 
@@ -11,45 +11,48 @@ def get_incident_for_user(user, incident_id):
     return get_object_or_404(Incident, id=incident_id, created_by=user)
 
 
+@login_required
 def home(request):
-    if not request.user.is_authenticated:
-        return redirect("incidents:report")
     if request.user.is_staff:
         return redirect("admin:index")
     return redirect("incidents:my_incidents")
 
 
+@login_required
 def report_incident(request):
-    if request.user.is_authenticated and request.user.is_staff:
+    if request.user.is_staff:
         messages.info(request, "Staff users should manage incidents from Django admin.")
         return redirect("admin:index")
 
     if request.method == "POST":
-        form = IncidentReportForm(
-            request.POST,
-            require_reporter_email=not request.user.is_authenticated,
-            anonymous_default=not request.user.is_authenticated,
-        )
+        form = IncidentReportForm(request.POST)
         if form.is_valid():
             incident = form.save(commit=False)
-            if request.user.is_authenticated and request.user.email and not incident.reporter_email:
+            incident.created_by = request.user
+            incident.is_anonymous = False
+            if request.user.email:
                 incident.reporter_email = request.user.email
-            if request.user.is_authenticated and not incident.is_anonymous:
-                incident.created_by = request.user
-            else:
-                incident.created_by = None
-                incident.is_anonymous = True
             incident.save()
             messages.success(request, "Incident submitted successfully.")
-            if incident.created_by:
-                return redirect("incidents:detail", incident_id=incident.id)
-            return redirect("incidents:report_success")
+            return redirect("incidents:detail", incident_id=incident.id)
     else:
-        form = IncidentReportForm(
-            require_reporter_email=not request.user.is_authenticated,
-            anonymous_default=not request.user.is_authenticated,
-        )
+        form = IncidentReportForm()
     return render(request, "incidents/report_incident.html", {"form": form})
+
+
+def public_report_incident(request):
+    if request.method == "POST":
+        form = IncidentPublicReportForm(request.POST)
+        if form.is_valid():
+            incident = form.save(commit=False)
+            incident.created_by = None
+            incident.is_anonymous = True
+            incident.save()
+            messages.success(request, "Incident submitted successfully.")
+            return redirect("incidents:public_report_success")
+    else:
+        form = IncidentPublicReportForm()
+    return render(request, "incidents/public_report_incident.html", {"form": form})
 
 
 def public_report_success(request):

@@ -39,7 +39,7 @@ class IncidentWorkflowTests(TestCase):
 
     def test_guest_user_can_submit_anonymous_report(self):
         response = self.client.post(
-            reverse("incidents:report"),
+            reverse("incidents:public_report"),
             {
                 "title": "Anonymous Email Scam",
                 "category": "phishing",
@@ -50,7 +50,7 @@ class IncidentWorkflowTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("incidents:report_success"))
+        self.assertEqual(response.url, reverse("incidents:public_report_success"))
         incident = Incident.objects.get(title="Anonymous Email Scam")
         self.assertIsNone(incident.created_by)
         self.assertTrue(incident.is_anonymous)
