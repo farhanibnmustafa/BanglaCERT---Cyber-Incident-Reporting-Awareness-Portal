@@ -1,11 +1,12 @@
 from django import forms
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.utils import timezone
 from django.utils.html import format_html, format_html_join
 
 from auditlog.models import AuditLog
+from notifications.services import notify_incident_status_change_with_reason
 
-from .models import Incident
+from .models import Incident, IncidentComment
 
 
 INCIDENT_MANAGER_USERNAME = "systemadmin40329"
@@ -32,6 +33,8 @@ def get_status_action(new_status):
         return AuditLog.ACTION_REJECT
     if new_status == Incident.STATUS_UNDER_REVIEW:
         return AuditLog.ACTION_UNDER_REVIEW
+    if new_status == Incident.STATUS_NEEDS_CLARIFICATION:
+        return AuditLog.ACTION_REQUEST_CLARIFICATION
     return AuditLog.ACTION_UPDATE
 
 
@@ -66,6 +69,14 @@ def log_status_change(user, incident, previous_status, new_status):
     log_admin_action(user, action, incident, message)
 
 
+def notify_status_change(incident, previous_status, new_status):
+    return notify_incident_status_change_with_reason(
+        incident=incident,
+        previous_status=previous_status,
+        new_status=new_status,
+    )
+
+
 @admin.action(description="Approve selected incidents")
 def approve_incidents(modeladmin, request, queryset):
     for incident in queryset:
@@ -73,6 +84,13 @@ def approve_incidents(modeladmin, request, queryset):
         incident.status = Incident.STATUS_VERIFIED
         incident.save(update_fields=["status", "updated_at"])
         log_status_change(request.user, incident, previous_status, incident.status)
+        sent, reason = notify_status_change(incident, previous_status, incident.status)
+        if not sent:
+            modeladmin.message_user(
+                request,
+                f"Status email not sent for Incident #{incident.id}: {reason}",
+                level=messages.WARNING,
+            )
 
 
 @admin.action(description="Mark selected incidents as Under Review")
@@ -82,6 +100,13 @@ def mark_under_review(modeladmin, request, queryset):
         incident.status = Incident.STATUS_UNDER_REVIEW
         incident.save(update_fields=["status", "updated_at"])
         log_status_change(request.user, incident, previous_status, incident.status)
+        sent, reason = notify_status_change(incident, previous_status, incident.status)
+        if not sent:
+            modeladmin.message_user(
+                request,
+                f"Status email not sent for Incident #{incident.id}: {reason}",
+                level=messages.WARNING,
+            )
 
 
 @admin.action(description="Reject selected incidents")
@@ -91,6 +116,29 @@ def reject_incidents(modeladmin, request, queryset):
         incident.status = Incident.STATUS_REJECTED
         incident.save(update_fields=["status", "updated_at"])
         log_status_change(request.user, incident, previous_status, incident.status)
+        sent, reason = notify_status_change(incident, previous_status, incident.status)
+        if not sent:
+            modeladmin.message_user(
+                request,
+                f"Status email not sent for Incident #{incident.id}: {reason}",
+                level=messages.WARNING,
+            )
+
+
+@admin.action(description="Request clarification for selected incidents")
+def request_clarification_incidents(modeladmin, request, queryset):
+    for incident in queryset:
+        previous_status = incident.status
+        incident.status = Incident.STATUS_NEEDS_CLARIFICATION
+        incident.save(update_fields=["status", "updated_at"])
+        log_status_change(request.user, incident, previous_status, incident.status)
+        sent, reason = notify_status_change(incident, previous_status, incident.status)
+        if not sent:
+            modeladmin.message_user(
+                request,
+                f"Status email not sent for Incident #{incident.id}: {reason}",
+                level=messages.WARNING,
+            )
 
 
 class IncidentAdminForm(forms.ModelForm):
@@ -104,18 +152,31 @@ class IncidentAdminForm(forms.ModelForm):
 
 @admin.register(Incident)
 class IncidentAdmin(admin.ModelAdmin):
+    class IncidentCommentInline(admin.TabularInline):
+        model = IncidentComment
+        extra = 0
+        fields = ("created_by", "comment", "is_admin_note", "created_at")
+        readonly_fields = ("created_by", "comment", "is_admin_note", "created_at")
+        can_delete = False
+
     form = IncidentAdminForm
-    list_display = ("id", "title", "created_at", "status", "created_by")
+    list_display = ("id", "title", "created_at", "status", "is_anonymous", "submitted_by")
     list_display_links = ("id", "title")
     list_editable = ("status",)
-    list_filter = ("status", "category")
+    list_filter = ("status", "category", "is_anonymous")
     search_fields = ("title", "description")
-    actions = None
-    actions_on_top = False
-    actions_on_bottom = False
+    actions = [
+        approve_incidents,
+        mark_under_review,
+        request_clarification_incidents,
+        reject_incidents,
+    ]
+    actions_on_top = True
+    actions_on_bottom = True
+    inlines = [IncidentCommentInline]
 
     def get_fields(self, request, obj=None):
-        base_fields = ("title", "category", "description", "incident_date")
+        base_fields = ("title", "category", "description", "incident_date", "is_anonymous")
         if obj is None:
             # On create: hide status + created_by fields
             return base_fields
@@ -131,12 +192,18 @@ class IncidentAdmin(admin.ModelAdmin):
                     "title",
                     "description",
                     "incident_date",
+                    "is_anonymous",
                     "created_by",
                     "created_at",
                     "updated_at",
                 ]
             )
         return readonly
+
+    def submitted_by(self, obj):
+        return obj.reporter_display_name
+
+    submitted_by.short_description = "Submitted by"
 
     def has_add_permission(self, request):
         # Incident creation is disabled in admin for all users.
@@ -185,7 +252,7 @@ class IncidentAdmin(admin.ModelAdmin):
         previous_status = None
         if change and obj.pk:
             previous_status = Incident.objects.filter(pk=obj.pk).values_list("status", flat=True).first()
-        if not obj.created_by:
+        if not change and not obj.created_by and request.user.is_authenticated and not obj.is_anonymous:
             obj.created_by = request.user
         super().save_model(request, obj, form, change)
         if not change:
@@ -199,6 +266,13 @@ class IncidentAdmin(admin.ModelAdmin):
 
         if previous_status and previous_status != obj.status:
             log_status_change(request.user, obj, previous_status, obj.status)
+            sent, reason = notify_status_change(obj, previous_status, obj.status)
+            if not sent:
+                self.message_user(
+                    request,
+                    f"Status email not sent for Incident #{obj.id}: {reason}",
+                    level=messages.WARNING,
+                )
         else:
             log_admin_action(
                 request.user,
