@@ -6,7 +6,7 @@ from django.utils.html import format_html, format_html_join
 from auditlog.models import AuditLog
 from notifications.services import notify_incident_status_change_with_reason
 
-from .models import Incident
+from .models import Incident, IncidentComment
 
 
 INCIDENT_MANAGER_USERNAME = "systemadmin40329"
@@ -33,6 +33,8 @@ def get_status_action(new_status):
         return AuditLog.ACTION_REJECT
     if new_status == Incident.STATUS_UNDER_REVIEW:
         return AuditLog.ACTION_UNDER_REVIEW
+    if new_status == Incident.STATUS_NEEDS_CLARIFICATION:
+        return AuditLog.ACTION_REQUEST_CLARIFICATION
     return AuditLog.ACTION_UPDATE
 
 
@@ -123,6 +125,22 @@ def reject_incidents(modeladmin, request, queryset):
             )
 
 
+@admin.action(description="Request clarification for selected incidents")
+def request_clarification_incidents(modeladmin, request, queryset):
+    for incident in queryset:
+        previous_status = incident.status
+        incident.status = Incident.STATUS_NEEDS_CLARIFICATION
+        incident.save(update_fields=["status", "updated_at"])
+        log_status_change(request.user, incident, previous_status, incident.status)
+        sent, reason = notify_status_change(incident, previous_status, incident.status)
+        if not sent:
+            modeladmin.message_user(
+                request,
+                f"Status email not sent for Incident #{incident.id}: {reason}",
+                level=messages.WARNING,
+            )
+
+
 class IncidentAdminForm(forms.ModelForm):
     class Meta:
         model = Incident
@@ -134,15 +152,28 @@ class IncidentAdminForm(forms.ModelForm):
 
 @admin.register(Incident)
 class IncidentAdmin(admin.ModelAdmin):
+    class IncidentCommentInline(admin.TabularInline):
+        model = IncidentComment
+        extra = 0
+        fields = ("created_by", "comment", "is_admin_note", "created_at")
+        readonly_fields = ("created_by", "comment", "is_admin_note", "created_at")
+        can_delete = False
+
     form = IncidentAdminForm
     list_display = ("id", "title", "created_at", "status", "is_anonymous", "submitted_by")
     list_display_links = ("id", "title")
     list_editable = ("status",)
     list_filter = ("status", "category", "is_anonymous")
     search_fields = ("title", "description")
-    actions = None
-    actions_on_top = False
-    actions_on_bottom = False
+    actions = [
+        approve_incidents,
+        mark_under_review,
+        request_clarification_incidents,
+        reject_incidents,
+    ]
+    actions_on_top = True
+    actions_on_bottom = True
+    inlines = [IncidentCommentInline]
 
     def get_fields(self, request, obj=None):
         base_fields = ("title", "category", "description", "incident_date", "is_anonymous")

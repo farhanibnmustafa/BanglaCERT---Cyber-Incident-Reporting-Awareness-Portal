@@ -1,44 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Report Submitted</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f5f7fb;
-            margin: 0;
-            padding: 24px;
-        }
-        .card {
-            max-width: 680px;
-            margin: 0 auto;
-            background: #fff;
-            border-radius: 10px;
-            padding: 24px;
-            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-        }
-        h1 {
-            margin-top: 0;
-            color: #1d2939;
-        }
-        p {
-            color: #475467;
-        }
-        a {
-            color: #175cd3;
-            text-decoration: none;
-            font-weight: 600;
-        }
-    </style>
-</head>
-<body>
-<div class="card">
-    <h1>Report Submitted</h1>
-    <p>Thank you. Your incident report was submitted successfully.</p>
-    <p>If the status changes, an update email will be sent to your provided address.</p>
-    <p><a href="{% url 'incidents:report' %}">Submit another report</a></p>
-</div>
-</body>
-</html>
+{% extends "base/site.html" %}
+
+{% block title %}Report Submitted | BanglaCERT{% endblock %}
+
+{% block content %}
+<h1>Report Submitted</h1>
+<p>Thank you. Your incident report was submitted successfully.</p>
+<p>If the incident status changes, an update email will be sent when a notification address is available.</p>
+<p><a href="{% url 'incidents:report' %}">Submit another report</a></p>
+{% endblock %}

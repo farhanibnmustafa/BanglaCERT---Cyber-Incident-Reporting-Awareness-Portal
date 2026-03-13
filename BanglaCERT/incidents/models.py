@@ -5,6 +5,7 @@ from django.db import models
 class Incident(models.Model):
     STATUS_PENDING = "PENDING"
     STATUS_UNDER_REVIEW = "UNDER_REVIEW"
+    STATUS_NEEDS_CLARIFICATION = "NEEDS_CLARIFICATION"
     STATUS_VERIFIED = "VERIFIED"
     STATUS_REJECTED = "REJECTED"
     STATUS_CLOSED = "CLOSED"
@@ -12,6 +13,7 @@ class Incident(models.Model):
     STATUS_CHOICES = [
         (STATUS_PENDING, "Pending"),
         (STATUS_UNDER_REVIEW, "Under Review"),
+        (STATUS_NEEDS_CLARIFICATION, "Needs Clarification"),
         (STATUS_VERIFIED, "Verified"),
         (STATUS_REJECTED, "Rejected"),
         (STATUS_CLOSED, "Closed"),
@@ -30,8 +32,8 @@ class Incident(models.Model):
     description = models.TextField()
     incident_date = models.DateField()
     is_anonymous = models.BooleanField(default=False)
-    reporter_email = models.EmailField(blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    reporter_email = models.EmailField(blank=True, default="")
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="incidents_created"
     )
@@ -46,3 +48,20 @@ class Incident(models.Model):
         if self.is_anonymous or not self.created_by:
             return "Anonymous"
         return self.created_by.username
+
+
+class IncidentComment(models.Model):
+    incident = models.ForeignKey(Incident, on_delete=models.CASCADE, related_name="comments")
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="incident_comments"
+    )
+    comment = models.TextField()
+    is_admin_note = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("created_at",)
+
+    def __str__(self) -> str:
+        author = self.created_by.username if self.created_by else "Unknown"
+        return f"Comment by {author} on Incident#{self.incident_id}"
