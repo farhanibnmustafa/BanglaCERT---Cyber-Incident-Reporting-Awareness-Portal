@@ -1,31 +1,25 @@
-from django.shortcuts import render, redirect
-from .forms import IncidentReportForm
+from django.shortcuts import redirect, render
+
+from .forms import IncidentPublicReportForm
 
 
-def report_incident(request):
-
+def public_report_incident(request):
     if request.method == "POST":
-        form = IncidentReportForm(request.POST)
-
+        form = IncidentPublicReportForm(request.POST)
         if form.is_valid():
             incident = form.save(commit=False)
-
-            if request.user.is_authenticated:
+            if request.user.is_authenticated and not incident.is_anonymous:
                 incident.created_by = request.user
-
-            incident.is_anonymous = form.cleaned_data[
-                "report_anonymously"
-            ]
-
+            else:
+                incident.created_by = None
+                incident.is_anonymous = True
             incident.save()
-
-            return redirect("home")
-
+            return redirect("incidents:report_success")
     else:
-        form = IncidentReportForm()
+        form = IncidentPublicReportForm()
 
-    return render(
-        request,
-        "incidents/report.html",
-        {"form": form}
-    )
+    return render(request, "incidents/report_incident.html", {"form": form})
+
+
+def public_report_success(request):
+    return render(request, "incidents/report_success.html")
