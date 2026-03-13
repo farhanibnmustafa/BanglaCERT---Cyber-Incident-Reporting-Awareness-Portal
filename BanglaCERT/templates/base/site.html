@@ -40,8 +40,10 @@
 <body>
     <nav>
         <a href="{% url 'incidents:home' %}">Home</a>
-        {% if user.is_authenticated and not user.is_staff %}
+        {% if not user.is_authenticated or not user.is_staff %}
             <a href="{% url 'incidents:report' %}">Report Incident</a>
+        {% endif %}
+        {% if user.is_authenticated and not user.is_staff %}
             <a href="{% url 'incidents:my_incidents' %}">My Reports</a>
         {% endif %}
         {% if user.is_authenticated and user.is_staff %}
