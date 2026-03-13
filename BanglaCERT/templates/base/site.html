@@ -39,16 +39,17 @@
 </head>
 <body>
     <nav>
-        <a href="{% url 'incidents:home' %}">Home</a>
+        {% if user.is_authenticated and user.is_staff %}
+            <a href="{% url 'admin:index' %}">Dashboard</a>
+        {% else %}
+            <a href="{% url 'incidents:home' %}">Home</a>
+        {% endif %}
         {% if not user.is_authenticated %}
             <a href="{% url 'incidents:public_report' %}">Report Incident</a>
         {% endif %}
         {% if user.is_authenticated and not user.is_staff %}
             <a href="{% url 'incidents:report' %}">Report Incident</a>
             <a href="{% url 'incidents:my_incidents' %}">My Reports</a>
-        {% endif %}
-        {% if user.is_authenticated and user.is_staff %}
-            <a href="{% url 'admin:index' %}">Admin Dashboard</a>
         {% endif %}
         <span style="margin-left:auto">
             {% if user.is_authenticated %}

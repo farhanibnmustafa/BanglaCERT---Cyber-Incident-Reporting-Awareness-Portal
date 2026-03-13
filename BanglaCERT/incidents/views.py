@@ -21,7 +21,7 @@ def home(request):
 @login_required
 def report_incident(request):
     if request.user.is_staff:
-        messages.info(request, "Staff users should manage incidents from Django admin.")
+        messages.info(request, "Staff users should manage incidents from the custom admin dashboard.")
         return redirect("admin:index")
 
     if request.method == "POST":
