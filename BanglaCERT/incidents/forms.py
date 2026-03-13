@@ -1,9 +1,14 @@
 from django import forms
 
-from .models import Incident
+from .models import Incident, IncidentComment
 
 
-class IncidentPublicReportForm(forms.ModelForm):
+class IncidentReportForm(forms.ModelForm):
+    def __init__(self, *args, require_reporter_email=False, anonymous_default=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["reporter_email"].required = require_reporter_email
+        self.fields["is_anonymous"].initial = anonymous_default
+
     class Meta:
         model = Incident
         fields = ("title", "category", "description", "incident_date", "reporter_email", "is_anonymous")
@@ -19,7 +24,11 @@ class IncidentPublicReportForm(forms.ModelForm):
             "reporter_email": "Used only for status update notifications.",
         }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["is_anonymous"].initial = True
-        self.fields["reporter_email"].required = True
+
+class IncidentCommentForm(forms.ModelForm):
+    class Meta:
+        model = IncidentComment
+        fields = ("comment",)
+        widgets = {
+            "comment": forms.Textarea(attrs={"rows": 3, "placeholder": "Write your comment"}),
+        }

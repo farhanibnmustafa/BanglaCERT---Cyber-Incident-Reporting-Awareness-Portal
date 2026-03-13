@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.html import format_html
 
 from incidents.models import Incident
@@ -9,7 +10,14 @@ from .models import AuditLog
 
 @admin.register(AuditLog)
 class AuditLogAdmin(admin.ModelAdmin):
-    list_display = ("id", "action", "incident_type", "incident_title_link", "changed_by", "created_at")
+    list_display = (
+        "id",
+        "action",
+        "incident_type",
+        "incident_title_link",
+        "changed_by",
+        "changed_at",
+    )
     list_filter = ("action", "object_type")
     search_fields = ("object_type", "object_id", "user__username", "message")
     ordering = ("-created_at",)
@@ -49,3 +57,9 @@ class AuditLogAdmin(admin.ModelAdmin):
         return obj.user.username if obj.user else "Unknown"
 
     changed_by.short_description = "Changed by"
+
+    def changed_at(self, obj):
+        return timezone.localtime(obj.created_at).strftime("%Y-%m-%d %H:%M:%S %Z")
+
+    changed_at.short_description = "Timestamp"
+    changed_at.admin_order_field = "created_at"

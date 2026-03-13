@@ -1,0 +1,36 @@
+{% extends "base/site.html" %}
+
+{% block title %}Admin Dashboard | BanglaCERT{% endblock %}
+
+{% block content %}
+<h1>Incident Admin Dashboard</h1>
+<p class="muted">Review submitted incidents and record decisions.</p>
+{% if incidents %}
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Reporter</th>
+                <th>Status</th>
+                <th>Category</th>
+                <th>Updated</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for incident in incidents %}
+                <tr>
+                    <td>{{ incident.id }}</td>
+                    <td><a href="{% url 'incidents:detail' incident.id %}">{{ incident.title }}</a></td>
+                    <td>{{ incident.created_by.username|default:"Unknown" }}</td>
+                    <td><span class="tag">{{ incident.get_status_display }}</span></td>
+                    <td>{{ incident.get_category_display }}</td>
+                    <td>{{ incident.updated_at }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No incidents found.</p>
+{% endif %}
+{% endblock %}
