@@ -36,6 +36,13 @@
     </div>
 
     <div class="col" style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px;">
+        <h2>Update Category</h2>
+        <form method="post" action="{% url 'admin:incident_category' incident.id %}">
+            {% csrf_token %}
+            {{ category_form.as_p }}
+            <button type="submit">Save Category</button>
+        </form>
+
         <h2>Update Status</h2>
         <form method="post" action="{% url 'admin:incident_status' incident.id %}">
             {% csrf_token %}
@@ -50,6 +57,25 @@
             <button type="submit">Add Note</button>
         </form>
     </div>
+</div>
+
+<div style="margin-top: 18px; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px;">
+    <h2>Evidence Files</h2>
+    {% if evidence_files %}
+        <ul>
+            {% for evidence in evidence_files %}
+                <li>
+                    <a href="{{ evidence.file.url }}" target="_blank" rel="noopener">{{ evidence.display_name }}</a>
+                    <span class="muted">
+                        uploaded {{ evidence.created_at|localtime|date:"Y-m-d H:i" }}
+                        {% if evidence.uploaded_by %}by {{ evidence.uploaded_by.username }}{% endif %}
+                    </span>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="muted">No evidence files uploaded.</p>
+    {% endif %}
 </div>
 
 <div class="row" style="margin-top: 18px; align-items: flex-start;">

@@ -12,7 +12,7 @@ from django.urls import reverse
 from accounts.forms import StaffPromotionForm, StaffUserCreationForm, UserRegistrationForm
 from auditlog.models import AuditLog
 
-from .forms import IncidentStaffCommentForm, IncidentStaffFilterForm, IncidentStaffStatusForm
+from .forms import IncidentStaffCategoryForm, IncidentStaffCommentForm, IncidentStaffFilterForm, IncidentStaffStatusForm
 from .models import Incident
 from .staff_tools import (
     build_audit_message,
@@ -113,6 +113,10 @@ def _get_audit_logs(incident):
     )
 
 
+def _category_label(category_value):
+    return dict(Incident.CATEGORY_CHOICES).get(category_value, category_value)
+
+
 @staff_required
 def dashboard(request):
     filter_form = IncidentStaffFilterForm(request.GET or None)
@@ -134,7 +138,9 @@ def incident_detail(request, incident_id):
         **_admin_context(request),
         "incident": incident,
         "comments": comments,
+        "evidence_files": incident.evidence_files.all(),
         "audit_logs": _get_audit_logs(incident),
+        "category_form": IncidentStaffCategoryForm(instance=incident),
         "status_form": IncidentStaffStatusForm(instance=incident),
         "comment_form": IncidentStaffCommentForm(),
     }
@@ -205,6 +211,39 @@ def staff_accounts(request):
         "normal_users": normal_users,
     }
     return render(request, "incidents/admin_staff_accounts.html", context)
+
+
+@staff_required
+def update_incident_category(request, incident_id):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    incident = _get_staff_incident(incident_id)
+    previous_category = incident.category
+    form = IncidentStaffCategoryForm(request.POST, instance=incident)
+    if not form.is_valid():
+        messages.error(request, "Could not update the incident category.")
+        return redirect("admin:incident_detail", incident_id=incident.id)
+
+    updated_incident = form.save(commit=False)
+    new_category = updated_incident.category
+    if previous_category == new_category:
+        messages.info(request, "The incident category was not changed.")
+        return redirect("admin:incident_detail", incident_id=incident.id)
+
+    incident.category = new_category
+    incident.save(update_fields=["category", "updated_at"])
+    log_staff_action(
+        request.user,
+        AuditLog.ACTION_UPDATE,
+        incident,
+        build_audit_message(
+            request.user,
+            f"Category changed from {_category_label(previous_category)} to {_category_label(new_category)}",
+        ),
+    )
+    messages.success(request, "Incident category updated.")
+    return redirect("admin:incident_detail", incident_id=incident.id)
 
 
 @staff_required
