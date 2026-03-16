@@ -4,11 +4,21 @@ from django.http import HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import IncidentCommentForm, IncidentPublicReportForm, IncidentReportForm
-from .models import Incident
+from .models import Incident, IncidentEvidence
 
 
 def get_incident_for_user(user, incident_id):
     return get_object_or_404(Incident, id=incident_id, created_by=user)
+
+
+def _save_evidence_files(incident, uploaded_by, files):
+    for evidence_file in files:
+        IncidentEvidence.objects.create(
+            incident=incident,
+            file=evidence_file,
+            original_name=evidence_file.name,
+            uploaded_by=uploaded_by,
+        )
 
 
 @login_required
@@ -25,7 +35,7 @@ def report_incident(request):
         return redirect("admin:index")
 
     if request.method == "POST":
-        form = IncidentReportForm(request.POST)
+        form = IncidentReportForm(request.POST, request.FILES)
         if form.is_valid():
             incident = form.save(commit=False)
             incident.created_by = request.user
@@ -33,6 +43,7 @@ def report_incident(request):
             if request.user.email:
                 incident.reporter_email = request.user.email
             incident.save()
+            _save_evidence_files(incident, request.user, form.cleaned_data.get("evidence_files", []))
             messages.success(request, "Incident submitted successfully.")
             return redirect("incidents:detail", incident_id=incident.id)
     else:
@@ -42,12 +53,13 @@ def report_incident(request):
 
 def public_report_incident(request):
     if request.method == "POST":
-        form = IncidentPublicReportForm(request.POST)
+        form = IncidentPublicReportForm(request.POST, request.FILES)
         if form.is_valid():
             incident = form.save(commit=False)
             incident.created_by = None
             incident.is_anonymous = True
             incident.save()
+            _save_evidence_files(incident, None, form.cleaned_data.get("evidence_files", []))
             messages.success(request, "Incident submitted successfully.")
             return redirect("incidents:public_report_success")
     else:
@@ -75,6 +87,7 @@ def incident_detail(request, incident_id):
 
     incident = get_incident_for_user(request.user, incident_id)
     comments = incident.comments.select_related("created_by").all()
+    evidence_files = incident.evidence_files.all()
     comment_form = IncidentCommentForm()
     return render(
         request,
@@ -83,6 +96,7 @@ def incident_detail(request, incident_id):
             "incident": incident,
             "comments": comments,
             "comment_form": comment_form,
+            "evidence_files": evidence_files,
         },
     )
 
