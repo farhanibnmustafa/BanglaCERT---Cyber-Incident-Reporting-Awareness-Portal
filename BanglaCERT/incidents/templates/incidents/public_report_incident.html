@@ -5,7 +5,7 @@
 {% block content %}
 <h1>Report a Cyber Incident</h1>
 <p class="muted">Submit incident details without signing in. Public reports are treated as anonymous.</p>
-<form method="post">
+<form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form.non_field_errors }}
     <p>
@@ -33,6 +33,12 @@
         {{ form.reporter_email }}
         {{ form.reporter_email.errors }}
         <span class="muted">{{ form.reporter_email.help_text }}</span>
+    </p>
+    <p>
+        <label for="{{ form.evidence_files.id_for_label }}">Evidence files</label>
+        {{ form.evidence_files }}
+        {{ form.evidence_files.errors }}
+        <span class="muted">{{ form.evidence_files.help_text }}</span>
     </p>
     <button type="submit">Submit Report</button>
 </form>
