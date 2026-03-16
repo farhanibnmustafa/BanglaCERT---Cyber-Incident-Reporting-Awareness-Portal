@@ -1,7 +1,10 @@
+import shutil
+import tempfile
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
 from django.core import mail
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.test.utils import override_settings
@@ -10,7 +13,7 @@ from django.utils import timezone
 
 from auditlog.models import AuditLog
 
-from .models import Incident, IncidentComment
+from .models import Incident, IncidentComment, IncidentEvidence
 
 
 User = get_user_model()
@@ -18,6 +21,9 @@ User = get_user_model()
 
 class IncidentWorkflowTests(TestCase):
     def setUp(self):
+        self.temp_media_root = tempfile.mkdtemp()
+        self.media_override = override_settings(MEDIA_ROOT=self.temp_media_root)
+        self.media_override.enable()
         self.user = User.objects.create_user(username="normaluser", password="pass12345")
         self.other_user = User.objects.create_user(username="otheruser", password="pass12345")
         self.manager_user = User.objects.create_user(
@@ -32,6 +38,11 @@ class IncidentWorkflowTests(TestCase):
             password="pass12345",
             is_staff=True,
         )
+
+    def tearDown(self):
+        self.media_override.disable()
+        shutil.rmtree(self.temp_media_root, ignore_errors=True)
+        super().tearDown()
 
     def test_normal_user_can_report_incident(self):
         self.client.login(username="normaluser", password="pass12345")
@@ -68,6 +79,46 @@ class IncidentWorkflowTests(TestCase):
         self.assertIsNone(incident.created_by)
         self.assertTrue(incident.is_anonymous)
         self.assertEqual(incident.reporter_email, "guest@example.com")
+
+    def test_normal_user_can_upload_evidence_when_reporting_incident(self):
+        self.client.login(username="normaluser", password="pass12345")
+        evidence = SimpleUploadedFile("proof.png", b"fake-png-data", content_type="image/png")
+        response = self.client.post(
+            reverse("incidents:report"),
+            {
+                "title": "Evidence Incident",
+                "category": "phishing",
+                "description": "Uploaded screenshot proof.",
+                "incident_date": "2026-03-03",
+                "evidence_files": evidence,
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        incident = Incident.objects.get(title="Evidence Incident")
+        self.assertEqual(incident.evidence_files.count(), 1)
+        saved_evidence = incident.evidence_files.get()
+        self.assertEqual(saved_evidence.original_name, "proof.png")
+        self.assertTrue(saved_evidence.file.name.endswith(".png"))
+
+    def test_reporting_incident_rejects_disallowed_evidence_format(self):
+        self.client.login(username="normaluser", password="pass12345")
+        evidence = SimpleUploadedFile("proof.exe", b"fake-exe-data", content_type="application/octet-stream")
+        response = self.client.post(
+            reverse("incidents:report"),
+            {
+                "title": "Bad Evidence Incident",
+                "category": "phishing",
+                "description": "This should fail validation.",
+                "incident_date": "2026-03-03",
+                "evidence_files": evidence,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Incident.objects.filter(title="Bad Evidence Incident").exists())
+        self.assertContains(response, "Allowed evidence formats")
+        self.assertEqual(IncidentEvidence.objects.count(), 0)
 
     def test_normal_user_cannot_view_other_users_incident(self):
         own_incident = Incident.objects.create(
@@ -238,6 +289,32 @@ class IncidentWorkflowTests(TestCase):
             ).exists()
         )
         self.assertEqual(len(mail.outbox), 1)
+
+    def test_staff_user_can_reclassify_incident_category_from_custom_admin(self):
+        incident = Incident.objects.create(
+            title="Category Update",
+            category="other",
+            description="Needs category correction",
+            incident_date=date(2026, 3, 1),
+            created_by=self.user,
+        )
+
+        self.client.login(username="adminuser", password="pass12345")
+        response = self.client.post(
+            reverse("admin:incident_category", args=[incident.id]),
+            {"category": "phishing"},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        incident.refresh_from_db()
+        self.assertEqual(incident.category, "phishing")
+        self.assertTrue(
+            AuditLog.objects.filter(
+                object_type="Incident",
+                object_id=incident.id,
+                message__icontains="Category changed from Other to Phishing",
+            ).exists()
+        )
 
     def test_staff_user_can_add_internal_note_from_custom_admin(self):
         incident = Incident.objects.create(
