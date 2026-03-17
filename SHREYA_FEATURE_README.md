@@ -10,7 +10,7 @@ This document explains exactly how Shreya's two requirements were implemented:
 
 1. Anonymous report without login
 - Public incident report endpoint was added.
-- Reporter identity can be hidden (`is_anonymous=True`).
+- Reporter identity can be hidden (`is_anonymous=True`). 
 - Personal user identity is not shown in anonymous reports (admin list shows `Anonymous`).
 
 2. Status change email alerts
