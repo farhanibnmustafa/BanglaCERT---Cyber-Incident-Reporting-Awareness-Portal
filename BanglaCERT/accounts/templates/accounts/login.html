@@ -1,0 +1,102 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% if staff_login %}Staff Login{% else %}Login{% endif %} | BanglaCERT</title>
+    <link rel="stylesheet" href="{% static 'css/auth_pages.css' %}">
+</head>
+<body class="auth-page">
+    <header class="auth-hero">
+        <div class="auth-brand">
+            <div class="hero-brand">
+                <div class="brand-row">
+                    <img class="brand-logo" src="{% static 'admin/img/BanglaCERT-logo.png' %}" alt="BanglaCERT">
+                </div>
+                <div class="brand-subtitle">Cyber Incident Reporting &amp; Awareness Portal</div>
+            </div>
+        </div>
+    </header>
+
+    <section class="auth-shell">
+        <div class="auth-card auth-card-login">
+            <div class="auth-card-body">
+                <h1 class="auth-title">
+                    {% if staff_login %}Staff Sign In{% else %}Sign In to Your Account{% endif %}
+                </h1>
+                <p class="auth-subtitle">
+                    {% if staff_login %}
+                        Authorized staff only. Use this page to access the admin dashboard.
+                    {% else %}
+                        Sign in to report and manage cyber incidents.
+                    {% endif %}
+                </p>
+                <div class="auth-divider"></div>
+
+                <div class="auth-messages">
+                    {% for message in messages %}
+                        <div class="auth-flash">{{ message }}</div>
+                    {% endfor %}
+                    {% if form.non_field_errors %}
+                        <div class="auth-errors">{{ form.non_field_errors }}</div>
+                    {% endif %}
+                </div>
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    <div class="auth-field">
+                        <label for="{{ form.email.id_for_label }}">Email Address or Username</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                            <div class="field-error">{{ form.email.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="auth-field">
+                        <label for="{{ form.password.id_for_label }}">Password</label>
+                        {{ form.password }}
+                        {% if form.password.errors %}
+                            <div class="field-error">{{ form.password.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+
+                    <button class="auth-btn auth-btn-blue" type="submit">Login</button>
+                </form>
+
+                <div class="auth-actions auth-actions-right">
+                    <a class="aux-link" href="#">Forgot Password?</a>
+                </div>
+
+                {% if staff_login %}
+                    <div class="anon-box">
+                        <div>
+                            <p class="anon-title">Normal User?</p>
+                            <p class="anon-subtitle">Use the regular login page for reporting incidents and user features.</p>
+                        </div>
+                        <a class="auth-btn auth-btn-green" href="{% url 'accounts:login' %}">User Login</a>
+                    </div>
+                {% else %}
+                    <div class="anon-box">
+                        <div>
+                            <p class="anon-title">Report Anonymously</p>
+                            <p class="anon-subtitle">Report a cyber incident without signing in.</p>
+                        </div>
+                        <a class="auth-btn auth-btn-green" href="{% url 'incidents:public_report' %}">Report Now</a>
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if staff_login %}
+                <div class="auth-card-footer">
+                    Need public access? <a href="{% url 'accounts:login' %}">Go to User Login</a>
+                </div>
+            {% else %}
+                <div class="auth-card-footer">
+                    New to BanglaCERT? <a href="{% url 'accounts:register' %}">Create an Account</a>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+</body>
+</html>

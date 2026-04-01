@@ -1,0 +1,74 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="{% static 'admin/img/BanglaCERT-logo.png' %}" type="image/png">
+    <title>{% block title %}BanglaCERT{% endblock %}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #f5f7fb; color: #1f2937; }
+        nav { background: #0f172a; color: #e2e8f0; padding: 12px 20px; display: flex; gap: 14px; align-items: center; }
+        nav a { color: #e2e8f0; text-decoration: none; font-weight: 600; }
+        nav .logout-form { display: inline; margin: 0; }
+        nav .logout-link {
+            background: transparent;
+            border: 0;
+            color: #e2e8f0;
+            font-weight: 600;
+            padding: 0;
+            cursor: pointer;
+            font: inherit;
+            text-decoration: none;
+        }
+        nav .logout-link:hover { text-decoration: underline; }
+        main { max-width: 960px; margin: 24px auto; background: #fff; padding: 20px; border-radius: 10px; }
+        .flash { padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; background: #e0f2fe; }
+        .errorlist { color: #b91c1c; margin: 4px 0 10px 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        th, td { border-bottom: 1px solid #e5e7eb; text-align: left; padding: 10px; vertical-align: top; }
+        th { background: #f8fafc; }
+        .muted { color: #6b7280; }
+        .tag { padding: 2px 8px; border-radius: 999px; background: #e2e8f0; font-size: 12px; display: inline-block; }
+        form p { margin: 12px 0; }
+        input, select, textarea { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
+        button { background: #0f172a; color: #fff; border: 0; border-radius: 6px; padding: 10px 14px; cursor: pointer; }
+        .row { display: flex; gap: 16px; }
+        .col { flex: 1; min-width: 0; }
+    </style>
+</head>
+<body>
+    <nav>
+        {% if user.is_authenticated and user.is_staff %}
+            <a href="{% url 'admin:index' %}">Dashboard</a>
+        {% else %}
+            <a href="{% url 'incidents:home' %}">Home</a>
+        {% endif %}
+        {% if not user.is_authenticated %}
+            <a href="{% url 'incidents:public_report' %}">Report Incident</a>
+        {% endif %}
+        {% if user.is_authenticated and not user.is_staff %}
+            <a href="{% url 'incidents:report' %}">Report Incident</a>
+            <a href="{% url 'incidents:my_incidents' %}">My Reports</a>
+        {% endif %}
+        <span style="margin-left:auto">
+            {% if user.is_authenticated %}
+                Signed in as <strong>{{ user.username }}</strong> |
+                <form class="logout-form" method="post" action="{% url 'accounts:logout' %}">
+                    {% csrf_token %}
+                    <button class="logout-link" type="submit">Logout</button>
+                </form>
+            {% else %}
+                <a href="{% url 'accounts:login' %}">Login</a> |
+                <a href="{% url 'accounts:register' %}">Register</a>
+            {% endif %}
+        </span>
+    </nav>
+    <main>
+        {% for message in messages %}
+            <div class="flash">{{ message }}</div>
+        {% endfor %}
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
