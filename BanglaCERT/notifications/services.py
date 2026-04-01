@@ -62,7 +62,7 @@ def _send_async(incident, recipient_email, subject, message):
         except Exception:  # pragma: no cover
             logger.exception("Async status change email failed for %s", recipient_email)
 
-    try:
+    try: 
         Thread(target=_target, daemon=True).start()
         return True, "queued_async"
     except Exception as exc:  # pragma: no cover
