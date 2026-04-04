@@ -151,6 +151,7 @@ STATICFILES_DIRS = [
 # Email settings
 # Configure via environment variables for real delivery.
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+#env file ta BanglaCERT er moddhe niye console er jaygay smtp dite hobe tahole real time mail jabe
 EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "true").lower() == "true"
