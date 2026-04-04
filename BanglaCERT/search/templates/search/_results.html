@@ -1,0 +1,26 @@
+{% load static %}
+{% if incidents %}
+    <div class="story-grid">
+    {% for incident in incidents %}
+        <div class="react-post-root"
+             data-id="{{ incident.id }}"
+             data-title="{{ incident.public_title }}"
+             data-category="{{ incident.get_category_display }}"
+             data-date="{{ incident.incident_date|date:'F j, Y' }}"
+             data-excerpt="{{ incident.public_excerpt }}"
+             data-likes="{{ incident.likes_total }}"
+             data-comments="{{ incident.comments_total }}"
+             data-shares="{{ incident.shares_total }}"
+             data-user-has-liked="{{ incident.user_has_liked|yesno:'true,false' }}"
+             data-detail-url="{% url 'awareness:detail' incident.id %}"
+             data-toggle-like-url="{% url 'awareness:toggle_like' incident.id %}"
+             data-share-url="{% url 'awareness:share' incident.id %}"
+             data-logo-url="{% static 'img/logo.png' %}"
+             data-is-authenticated="{{ user.is_authenticated|yesno:'true,false' }}"
+             data-csrf-token="{{ csrf_token }}">
+        </div>
+    {% endfor %}
+    </div>
+{% else %}
+    <p>No verified incidents matched the selected filters.</p>
+{% endif %}
