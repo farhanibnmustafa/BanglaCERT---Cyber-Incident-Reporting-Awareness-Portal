@@ -1,5 +1,27 @@
+from pathlib import Path
+from uuid import uuid4
+
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
+
+
+ALLOWED_EVIDENCE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".pdf"}
+MAX_EVIDENCE_FILE_SIZE = 5 * 1024 * 1024
+
+
+def validate_evidence_file(uploaded_file):
+    suffix = Path(uploaded_file.name).suffix.lower()
+    if suffix not in ALLOWED_EVIDENCE_EXTENSIONS:
+        raise ValidationError("Allowed evidence formats: PNG, JPG, JPEG, PDF.")
+    if uploaded_file.size > MAX_EVIDENCE_FILE_SIZE:
+        raise ValidationError("Each evidence file must be 5 MB or smaller.")
+
+
+def incident_evidence_upload_to(instance, filename):
+    suffix = Path(filename).suffix.lower()
+    incident_id = instance.incident_id or "unassigned"
+    return f"incident_evidence/{incident_id}/{uuid4().hex}{suffix}"
 
 
 class Incident(models.Model):
@@ -65,3 +87,28 @@ class IncidentComment(models.Model):
     def __str__(self) -> str:
         author = self.created_by.username if self.created_by else "Unknown"
         return f"Comment by {author} on Incident#{self.incident_id}"
+
+
+class IncidentEvidence(models.Model):
+    incident = models.ForeignKey(Incident, on_delete=models.CASCADE, related_name="evidence_files")
+    file = models.FileField(upload_to=incident_evidence_upload_to, validators=[validate_evidence_file])
+    original_name = models.CharField(max_length=255, blank=True)
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="incident_evidence"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+
+    def save(self, *args, **kwargs):
+        if self.file and not self.original_name:
+            self.original_name = Path(self.file.name).name
+        super().save(*args, **kwargs)
+
+    @property
+    def display_name(self) -> str:
+        return self.original_name or Path(self.file.name).name
+
+    def __str__(self) -> str:
+        return f"Evidence for Incident#{self.incident_id}: {self.display_name}"

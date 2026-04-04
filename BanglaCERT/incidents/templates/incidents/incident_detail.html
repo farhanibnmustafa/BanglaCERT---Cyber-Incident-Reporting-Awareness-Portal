@@ -1,4 +1,5 @@
 {% extends "base/site.html" %}
+{% load tz %}
 
 {% block title %}Incident #{{ incident.id }} | BanglaCERT{% endblock %}
 
@@ -9,6 +10,20 @@
 <p><strong>Incident Date:</strong> {{ incident.incident_date }}</p>
 <p><strong>Reported By:</strong> {{ incident.created_by.username|default:"Unknown" }}</p>
 <p><strong>Description</strong><br>{{ incident.description|linebreaksbr }}</p>
+
+<h2>Evidence Files</h2>
+{% if evidence_files %}
+    <ul>
+        {% for evidence in evidence_files %}
+            <li>
+                <a href="{{ evidence.file.url }}" target="_blank" rel="noopener">{{ evidence.display_name }}</a>
+                <span class="muted">uploaded {{ evidence.created_at|localtime|date:"Y-m-d H:i" }}</span>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No evidence files uploaded.</p>
+{% endif %}
 
 <p><a href="{% url 'incidents:my_incidents' %}">Back to my reports</a></p>
 
@@ -35,7 +50,7 @@
                             <span class="tag">Comment</span>
                         {% endif %}
                     </td>
-                    <td>{{ item.created_at }}</td>
+                    <td>{{ item.created_at|localtime|date:"Y-m-d H:i" }}</td>
                 </tr>
             {% endfor %}
         </tbody>

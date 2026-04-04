@@ -1,4 +1,5 @@
 {% extends "base/site.html" %}
+{% load tz %}
 
 {% block title %}My Reports | BanglaCERT{% endblock %}
 
@@ -22,7 +23,7 @@
                     <td><a href="{% url 'incidents:detail' incident.id %}">{{ incident.title }}</a></td>
                     <td>{{ incident.get_category_display }}</td>
                     <td><span class="tag">{{ incident.get_status_display }}</span></td>
-                    <td>{{ incident.created_at }}</td>
+                    <td>{{ incident.created_at|localtime|date:"Y-m-d H:i" }}</td>
                 </tr>
             {% endfor %}
         </tbody>

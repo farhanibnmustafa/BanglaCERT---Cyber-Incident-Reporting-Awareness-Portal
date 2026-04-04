@@ -1,3 +1,1 @@
-from django.contrib import admin
-
-# Register your models here.
+"""BanglaCERT does not use Django's built-in admin site."""
