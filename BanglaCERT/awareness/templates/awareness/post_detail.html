@@ -1,0 +1,84 @@
+{% extends "base/site.html" %}
+
+{% block title %}{{ incident.public_title }} | Awareness{% endblock %}
+
+{% block content %}
+<article class="detail-hero">
+    <span class="eyebrow">Verified Public Warning</span>
+    <div style="display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: start;">
+        <div>
+            <h1 style="margin-bottom: 6px;">{{ incident.public_title }}</h1>
+            <p class="muted" style="margin: 0;">
+                {{ incident.get_category_display }} | {{ incident.incident_date|date:"F j, Y" }}
+            </p>
+        </div>
+        <span class="tag">Verified</span>
+    </div>
+
+    <p style="margin-top: 16px;">{{ incident.public_description|linebreaksbr }}</p>
+    <p class="muted">
+        Likes: {{ incident.likes_total }} |
+        Comments: {{ incident.comments_total }} |
+        Shares: {{ incident.shares_total }}
+    </p>
+
+    <div class="action-row" style="margin-top: 18px;">
+        {% if user.is_authenticated %}
+            <form method="post" action="{% url 'awareness:toggle_like' incident.id %}" style="margin: 0;">
+                {% csrf_token %}
+                <button type="submit">{% if incident.user_has_liked %}Unlike{% else %}Like{% endif %}</button>
+            </form>
+        {% else %}
+            <a class="cta-link" href="{% url 'accounts:login' %}?next={{ request.path }}">Login to Like</a>
+        {% endif %}
+
+        <form method="post" action="{% url 'awareness:share' incident.id %}" style="margin: 0;">
+            {% csrf_token %}
+            <button type="submit">Share</button>
+        </form>
+
+        <a class="section-link" href="{% url 'incidents:home' %}#awareness">Back to Awareness</a>
+    </div>
+</article>
+
+<section class="panel">
+    <h2>Share Link</h2>
+    <input type="text" value="{{ share_url }}" readonly>
+    <p class="muted">Only verified public posts are shareable. Sensitive details are hidden from the public view.</p>
+</section>
+
+<section class="panel">
+    <h2>Comments</h2>
+
+    {% if comments %}
+        {% for comment in comments %}
+            <div class="comment-card">
+                <strong>
+                    {% if comment.created_by %}
+                        {{ comment.created_by.username }}
+                    {% else %}
+                        Unknown
+                    {% endif %}
+                </strong>
+                <p style="margin: 8px 0;">{{ comment.comment|linebreaksbr }}</p>
+                <p class="muted" style="margin: 0;">{{ comment.created_at|date:"M j, Y g:i A" }}</p>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p class="muted">No comments yet.</p>
+    {% endif %}
+</section>
+
+<section class="panel">
+    <h2>Add Comment</h2>
+    {% if user.is_authenticated %}
+        <form method="post" action="{% url 'awareness:add_comment' incident.id %}">
+            {% csrf_token %}
+            {{ comment_form.as_p }}
+            <button type="submit">Post Comment</button>
+        </form>
+    {% else %}
+        <p><a class="cta-link light-button" href="{% url 'accounts:login' %}?next={{ request.path }}">Login to comment on this post.</a></p>
+    {% endif %}
+</section>
+{% endblock %}

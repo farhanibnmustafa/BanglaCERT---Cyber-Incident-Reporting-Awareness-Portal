@@ -1,0 +1,70 @@
+{% extends "base/site.html" %}
+
+{% block title %}Search Incidents | BanglaCERT{% endblock %}
+
+{% block content %}
+<section class="section-block">
+<span class="eyebrow">Filter Console</span>
+<h1>Search Verified Incidents</h1>
+<p class="lede">Slice through verified public incident data by category, date range, or keywords. The result grid refreshes as filters change.</p>
+
+<form id="search-form" class="search-panel" method="get" action="{% url 'search:index' %}">
+    <div class="row">
+        <div class="col">
+            <label for="{{ form.q.id_for_label }}">{{ form.q.label }}</label>
+            {{ form.q }}
+        </div>
+        <div class="col">
+            <label for="{{ form.category.id_for_label }}">{{ form.category.label }}</label>
+            {{ form.category }}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <label for="{{ form.date_from.id_for_label }}">{{ form.date_from.label }}</label>
+            {{ form.date_from }}
+        </div>
+        <div class="col">
+            <label for="{{ form.date_to.id_for_label }}">{{ form.date_to.label }}</label>
+            {{ form.date_to }}
+        </div>
+    </div>
+    <button type="submit">Apply Filters</button>
+</form>
+
+<section id="search-results" style="margin-top: 24px;">
+    {% include "search/_results.html" %}
+</section>
+</section>
+
+<script>
+(() => {
+    const form = document.getElementById("search-form");
+    const results = document.getElementById("search-results");
+    if (!form || !results) {
+        return;
+    }
+
+    let timerId = null;
+
+    const updateResults = () => {
+        const params = new URLSearchParams(new FormData(form));
+        fetch(`${form.action}?${params.toString()}`, {
+            headers: {"X-Requested-With": "XMLHttpRequest"}
+        })
+            .then((response) => response.text())
+            .then((html) => {
+                results.innerHTML = html;
+            });
+    };
+
+    form.querySelectorAll("input, select").forEach((field) => {
+        const eventName = field.type === "text" || field.type === "search" ? "input" : "change";
+        field.addEventListener(eventName, () => {
+            clearTimeout(timerId);
+            timerId = setTimeout(updateResults, 250);
+        });
+    });
+})();
+</script>
+{% endblock %}

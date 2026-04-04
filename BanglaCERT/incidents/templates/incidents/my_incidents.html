@@ -4,7 +4,11 @@
 {% block title %}My Reports | BanglaCERT{% endblock %}
 
 {% block content %}
+<section class="section-block">
+<span class="eyebrow">Reporter Workspace</span>
 <h1>My Incident Reports</h1>
+<p class="lede">Track every incident you submitted, monitor status changes, and open any report for more detail.</p>
+<p><a class="cta-link light-button" href="{% url 'incidents:report' %}">Create New Report</a></p>
 {% if incidents %}
     <table>
         <thead>
@@ -31,4 +35,5 @@
 {% else %}
     <p>No incident reports yet.</p>
 {% endif %}
+</section>
 {% endblock %}

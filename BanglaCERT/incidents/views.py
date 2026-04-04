@@ -3,6 +3,10 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 
+from analytics.services import build_analytics_dashboard
+from search.filters import PublicIncidentSearchForm
+from search.services import search_public_incidents
+
 from .forms import IncidentCommentForm, IncidentPublicReportForm, IncidentReportForm
 from .models import Incident, IncidentEvidence
 
@@ -21,11 +25,18 @@ def _save_evidence_files(incident, uploaded_by, files):
         )
 
 
-@login_required
 def home(request):
     if request.user.is_staff:
         return redirect("admin:index")
-    return redirect("incidents:my_incidents")
+
+    search_form = PublicIncidentSearchForm(request.GET or None)
+    awareness_incidents = search_public_incidents(search_form, user=request.user)
+    context = {
+        "search_form": search_form,
+        "awareness_incidents": awareness_incidents,
+        **build_analytics_dashboard(),
+    }
+    return render(request, "incidents/home.html", context)
 
 
 @login_required

@@ -1,0 +1,146 @@
+{% extends "base/site.html" %}
+
+{% block title %}Home | BanglaCERT{% endblock %}
+
+{% block content %}
+<section id="analytics" class="section-block">
+    <span class="eyebrow">Threat Intelligence</span>
+    <h1>Incident Analytics</h1>
+    <p class="lede">A verified-post control room showing the attack patterns that are surfacing publicly, the pressure points by category, and the current frequency trend.</p>
+
+    <section class="metric-grid">
+        <div class="metric-card">
+            <p class="metric-label">Verified Posts Analyzed</p>
+            <h2 style="margin: 0;">{{ total_incidents }}</h2>
+        </div>
+        <div class="metric-card">
+            <p class="metric-label">Verified Incidents</p>
+            <h2 style="margin: 0;">{{ verified_incidents }}</h2>
+        </div>
+        <div class="metric-card">
+            <p class="metric-label">Public Awareness Posts</p>
+            <h2 style="margin: 0;">{{ public_posts }}</h2>
+        </div>
+        <div class="metric-card">
+            <p class="metric-label">Most Common Attack</p>
+            <h2 style="margin: 0;">{{ most_common_type }}</h2>
+        </div>
+    </section>
+
+    <section class="chart-panel">
+        <h2>Attack Type Chart</h2>
+        {% if category_breakdown %}
+            {% for item in category_breakdown %}
+                <div class="bar-row">
+                    <strong class="bar-label">{{ item.label }}</strong>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width: {{ item.width }}%;"></div>
+                    </div>
+                    <span>{{ item.count }}</span>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No incident data is available yet.</p>
+        {% endif %}
+    </section>
+
+    <section>
+        <h2>Incident Frequency Graph</h2>
+        {% if frequency_points %}
+            <div class="trend-shell">
+                <svg viewBox="0 0 300 150" width="100%" height="180" role="img" aria-label="Incident frequency trend line">
+                    <line x1="20" y1="130" x2="280" y2="130" stroke="#cbd5e1" stroke-width="1"></line>
+                    <line x1="20" y1="20" x2="20" y2="130" stroke="#cbd5e1" stroke-width="1"></line>
+                    <polyline fill="none" stroke="#2563eb" stroke-width="3" points="{{ frequency_line_points }}"></polyline>
+                    {% for point in frequency_points %}
+                        <circle cx="{{ point.x }}" cy="{{ point.y }}" r="4" fill="#0f172a"></circle>
+                    {% endfor %}
+                </svg>
+
+                <div class="trend-grid" style="grid-template-columns: repeat({{ frequency_points|length }}, minmax(0, 1fr));">
+                    {% for point in frequency_points %}
+                        <div class="trend-column">
+                            <div class="trend-bar-wrap">
+                                <div class="trend-bar" style="height: {{ point.height }}px;"></div>
+                            </div>
+                            <strong style="display: block;">{{ point.count }}</strong>
+                            <span class="muted" style="font-size: 12px;">{{ point.label }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% else %}
+            <p>No incident trend data is available yet.</p>
+        {% endif %}
+    </section>
+</section>
+
+<section id="awareness" class="section-block">
+    <span class="eyebrow">Public Signal Feed</span>
+    <h1>Cyber Awareness Posts</h1>
+    <p class="lede">Verified incidents are surfaced here as readable public warnings, with confidential details masked before publication. Search and filter directly from the home dashboard.</p>
+
+    <form id="home-search-form" class="search-panel" method="get" action="{% url 'search:index' %}">
+        <div class="row">
+            <div class="col">
+                <label for="{{ search_form.q.id_for_label }}">{{ search_form.q.label }}</label>
+                {{ search_form.q }}
+            </div>
+            <div class="col">
+                <label for="{{ search_form.category.id_for_label }}">{{ search_form.category.label }}</label>
+                {{ search_form.category }}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <label for="{{ search_form.date_from.id_for_label }}">{{ search_form.date_from.label }}</label>
+                {{ search_form.date_from }}
+            </div>
+            <div class="col">
+                <label for="{{ search_form.date_to.id_for_label }}">{{ search_form.date_to.label }}</label>
+                {{ search_form.date_to }}
+            </div>
+        </div>
+    </form>
+
+    <section id="home-search-results" style="margin-top: 24px;">
+        {% include "search/_results.html" with incidents=awareness_incidents %}
+    </section>
+</section>
+
+<script>
+(() => {
+    const form = document.getElementById("home-search-form");
+    const results = document.getElementById("home-search-results");
+    if (!form || !results) {
+        return;
+    }
+
+    let timerId = null;
+
+    const updateResults = () => {
+        const params = new URLSearchParams(new FormData(form));
+        const url = `${form.action}?${params.toString()}`;
+        const nextUrl = params.toString()
+            ? `${window.location.pathname}?${params.toString()}#awareness`
+            : `${window.location.pathname}#awareness`;
+        window.history.replaceState({}, "", nextUrl);
+        fetch(url, {
+            headers: {"X-Requested-With": "XMLHttpRequest"}
+        })
+            .then((response) => response.text())
+            .then((html) => {
+                results.innerHTML = html;
+            });
+    };
+
+    form.querySelectorAll("input, select").forEach((field) => {
+        const eventName = field.type === "text" || field.type === "search" ? "input" : "change";
+        field.addEventListener(eventName, () => {
+            clearTimeout(timerId);
+            timerId = setTimeout(updateResults, 250);
+        });
+    });
+})();
+</script>
+{% endblock %}
