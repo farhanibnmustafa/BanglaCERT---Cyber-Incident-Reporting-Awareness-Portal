@@ -1,0 +1,16 @@
+{% extends "base/site.html" %}
+
+{% block title %}Create First Admin | BanglaCERT{% endblock %}
+
+{% block content %}
+<h1>Create the First Admin Account</h1>
+<p class="muted">This page is only used when the system has no admin yet. The first account created here gets full admin access.</p>
+
+<div class="admin-setup-card">
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Create First Admin</button>
+    </form>
+</div>
+{% endblock %}

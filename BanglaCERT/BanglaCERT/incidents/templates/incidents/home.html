@@ -1,0 +1,79 @@
+{% extends "base/site.html" %}
+
+{% block title %}Home | BanglaCERT{% endblock %}
+
+{% block content %}
+{% include "analytics/_dashboard_section.html" with section_id="analytics" analytics_eyebrow="Threat Intelligence" analytics_title="Incident Analytics" analytics_lede="A verified-post control room showing the attack patterns that are surfacing publicly, the pressure points by category, and the current frequency trend." %}
+
+<section id="awareness" class="section-block">
+    <span class="eyebrow">Public Signal Feed</span>
+    <h1>Cyber Awareness Posts</h1>
+    <p class="lede">Verified incidents are surfaced here as readable public warnings, with confidential details masked before publication. Search and filter directly from the home dashboard.</p>
+
+    <form id="home-search-form" class="search-panel" method="get" action="{% url 'search:index' %}">
+        <div class="row">
+            <div class="col">
+                <label for="{{ search_form.q.id_for_label }}">{{ search_form.q.label }}</label>
+                {{ search_form.q }}
+            </div>
+            <div class="col">
+                <label for="{{ search_form.category.id_for_label }}">{{ search_form.category.label }}</label>
+                {{ search_form.category }}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <label for="{{ search_form.date_from.id_for_label }}">{{ search_form.date_from.label }}</label>
+                {{ search_form.date_from }}
+            </div>
+            <div class="col">
+                <label for="{{ search_form.date_to.id_for_label }}">{{ search_form.date_to.label }}</label>
+                {{ search_form.date_to }}
+            </div>
+        </div>
+    </form>
+
+    <section id="home-search-results" style="margin-top: 24px;">
+        {% include "search/_results.html" with incidents=awareness_incidents %}
+    </section>
+</section>
+
+<script>
+(() => {
+    const form = document.getElementById("home-search-form");
+    const results = document.getElementById("home-search-results");
+    if (!form || !results) {
+        return;
+    }
+
+    let timerId = null;
+
+    const updateResults = () => {
+        const params = new URLSearchParams(new FormData(form));
+        const url = `${form.action}?${params.toString()}`;
+        const nextUrl = params.toString()
+            ? `${window.location.pathname}?${params.toString()}#awareness`
+            : `${window.location.pathname}#awareness`;
+        window.history.replaceState({}, "", nextUrl);
+        fetch(url, {
+            headers: {"X-Requested-With": "XMLHttpRequest"}
+        })
+            .then((response) => response.text())
+            .then((html) => {
+                results.innerHTML = html;
+                if (typeof window.mountBanglaCERTPostCards === "function") {
+                    window.mountBanglaCERTPostCards(results);
+                }
+            });
+    };
+
+    form.querySelectorAll("input, select").forEach((field) => {
+        const eventName = field.type === "text" || field.type === "search" ? "input" : "change";
+        field.addEventListener(eventName, () => {
+            clearTimeout(timerId);
+            timerId = setTimeout(updateResults, 250);
+        });
+    });
+})();
+</script>
+{% endblock %}

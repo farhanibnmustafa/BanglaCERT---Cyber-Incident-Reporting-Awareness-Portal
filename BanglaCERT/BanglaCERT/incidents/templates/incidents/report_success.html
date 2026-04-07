@@ -1,0 +1,26 @@
+{% extends "base/site.html" %}
+
+{% block title %}Report Submitted | BanglaCERT{% endblock %}
+
+{% block content %}
+<h1>Report Submitted</h1>
+<p>Thank you. Your incident report was submitted successfully.</p>
+{% if tracking %}
+    <section class="section-block">
+        <span class="eyebrow">Anonymous Tracking</span>
+        <h2>Save These Credentials</h2>
+        <p>You will need both values below to check this report status without signing in.</p>
+        <p><strong>Tracking ID</strong><br><span class="mono">{{ tracking.tracking_id }}</span></p>
+        <p><strong>Access Token</strong><br><span class="mono">{{ tracking.access_token }}</span></p>
+        {% if tracking.reporter_email %}
+            <p>Status update emails will also be sent to <strong>{{ tracking.reporter_email }}</strong> when a notification address is available.</p>
+        {% else %}
+            <p>No email address was provided, so this tracking ID and access token are the way to check future status updates.</p>
+        {% endif %}
+    </section>
+{% else %}
+    <p>If the incident status changes, an update email will be sent when a notification address is available.</p>
+{% endif %}
+<p><a href="{% url 'incidents:public_report_status' %}">Check report status</a></p>
+<p><a href="{% url 'incidents:public_report' %}">Submit another report</a></p>
+{% endblock %}

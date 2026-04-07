@@ -1,0 +1,220 @@
+/* Modular CSS for the React Navbar Component */
+
+.react-site-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  margin: 18px auto 0;
+  width: min(1180px, calc(100% - 28px));
+  border: 1px solid rgba(103, 152, 201, 0.22);
+  border-radius: 22px;
+  background: rgba(6, 18, 40, 0.85);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 18px 48px rgba(8, 18, 39, 0.24);
+  font-family: inherit;
+}
+
+.nav-brand-link {
+  display: flex;
+  align-items: center;
+  padding-right: 20px;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+  z-index: 51;
+}
+
+.nav-brand-link:hover {
+  opacity: 0.8;
+}
+
+.nav-logo {
+  height: clamp(34px, 4vw, 44px);
+  width: auto;
+  object-fit: contain;
+}
+
+.nav-brand-text {
+  color: #f7fcff;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  font-size: 1.15rem;
+  margin-left: 12px;
+}
+
+/* Mobile Toggle */
+.mobile-menu-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: #eaf6ff;
+  cursor: pointer;
+  padding: 4px;
+  z-index: 51;
+}
+
+.mobile-menu-btn:hover {
+  color: #8ff3ff;
+}
+
+/* Links Container */
+.nav-links-container {
+  display: flex;
+  flex: 1;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-primary, .nav-auth {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #eaf6ff;
+  text-decoration: none;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 13px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+  background: rgba(38, 212, 255, 0.14);
+  color: #8ff3ff;
+  transform: translateY(-1px);
+}
+
+.nav-link.highlight {
+  background: linear-gradient(135deg, #143f86 0%, #0d3270 58%, #08244f 100%);
+  border: 1px solid rgba(12, 49, 107, 0.95);
+  color: #f4f8ff;
+  box-shadow: 0 10px 20px rgba(8, 31, 74, 0.24);
+}
+
+.nav-link.highlight:hover {
+  background: linear-gradient(135deg, #1a4d9f 0%, #12408c 58%, #0b2f69 100%);
+  color: #ffffff;
+  box-shadow: 0 14px 24px rgba(8, 31, 74, 0.3);
+}
+
+.nav-user-menu {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-left: 16px;
+  border-left: 1px solid rgba(143, 243, 255, 0.18);
+}
+
+.user-greeting {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #d1efff;
+  font-size: 14px;
+}
+
+.logout-form {
+  margin: 0;
+}
+
+.logout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(220, 38, 38, 0.1);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  color: #ffd1d1;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.logout-btn:hover {
+  background: rgba(220, 38, 38, 0.2);
+  color: #ffeded;
+  transform: translateY(-1px);
+}
+
+.auth-separator {
+  color: rgba(143, 243, 255, 0.3);
+}
+
+/* Responsive Mobile Styles */
+@media (max-width: 860px) {
+  .mobile-menu-btn {
+    display: flex;
+  }
+  
+  .nav-links-container {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    background: rgba(6, 18, 40, 0.95);
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(103, 152, 201, 0.22);
+    border-radius: 18px;
+    padding: 20px;
+    margin-top: 10px;
+    box-shadow: 0 24px 60px rgba(4, 12, 28, 0.4);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-10px);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  
+  .nav-links-container.open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+  
+  .nav-primary, .nav-auth {
+    flex-direction: column;
+    width: 100%;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .nav-link {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 12px 16px;
+  }
+  
+  .nav-auth {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(143, 243, 255, 0.18);
+  }
+  
+  .nav-user-menu {
+    flex-direction: column;
+    align-items: flex-start;
+    padding-left: 0;
+    border-left: none;
+    width: 100%;
+  }
+  
+  .auth-separator {
+    display: none;
+  }
+}
