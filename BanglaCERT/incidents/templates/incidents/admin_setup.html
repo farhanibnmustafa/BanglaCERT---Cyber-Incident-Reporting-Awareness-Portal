@@ -6,7 +6,7 @@
 <h1>Create the First Admin Account</h1>
 <p class="muted">This page is only used when the system has no admin yet. The first account created here gets full admin access.</p>
 
-<div style="max-width: 640px; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px;">
+<div class="admin-setup-card">
     <form method="post">
         {% csrf_token %}
         {{ form.as_p }}
