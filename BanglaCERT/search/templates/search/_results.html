@@ -3,6 +3,7 @@
     <div class="story-grid">
     {% for incident in incidents %}
         <div class="react-post-root"
+             id="awareness-post-{{ incident.id }}"
              data-id="{{ incident.id }}"
              data-title="{{ incident.public_title }}"
              data-category="{{ incident.get_category_display }}"

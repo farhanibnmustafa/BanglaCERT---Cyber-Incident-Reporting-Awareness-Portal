@@ -1,5 +1,9 @@
 /* Facebook Post style UI for Verified Signals */
 
+.react-post-root {
+    scroll-margin-top: 108px;
+}
+
 .fb-post-card {
     background: #ffffff;
     border: 1px solid #dddfe2;
@@ -165,7 +169,7 @@
 
 .fb-action-buttons-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr) auto;
+    grid-template-columns: repeat(3, 1fr);
     gap: 4px;
 }
 
@@ -200,9 +204,9 @@
     color: #1877f2;
 }
 
-.fb-action-link-btn {
-    width: auto;
-    padding: 8px 12px;
+.fb-action-btn:disabled {
+    opacity: 0.72;
+    cursor: wait;
 }
 
 /* Accessibility and Dark Mode Support */

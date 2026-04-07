@@ -10,6 +10,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
 from accounts.forms import StaffPromotionForm, StaffUserCreationForm, UserRegistrationForm
+from analytics.services import build_analytics_dashboard
 from auditlog.models import AuditLog
 
 from .forms import IncidentStaffCategoryForm, IncidentStaffCommentForm, IncidentStaffFilterForm, IncidentStaffStatusForm
@@ -126,6 +127,7 @@ def dashboard(request):
         "incidents": incidents,
         "filter_form": filter_form,
         "status_summary": _status_summary(),
+        **build_analytics_dashboard(scope="all"),
     }
     return render(request, "incidents/admin_dashboard.html", context)
 

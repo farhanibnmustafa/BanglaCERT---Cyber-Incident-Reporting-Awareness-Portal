@@ -22,11 +22,18 @@ def _build_frequency_series(incidents):
     return items
 
 
-def build_analytics_dashboard():
-    incidents = list(
-        Incident.objects.filter(status=Incident.STATUS_VERIFIED).order_by("incident_date", "created_at")
-    )
+def build_analytics_dashboard(*, scope="verified"):
+    if scope == "all":
+        incidents = list(Incident.objects.order_by("incident_date", "created_at"))
+        analyzed_label = "Reported Incidents Analyzed"
+    else:
+        incidents = list(
+            Incident.objects.filter(status=Incident.STATUS_VERIFIED).order_by("incident_date", "created_at")
+        )
+        analyzed_label = "Verified Posts Analyzed"
+
     total_incidents = len(incidents)
+    verified_incidents = sum(1 for incident in incidents if incident.status == Incident.STATUS_VERIFIED)
 
     category_counter = Counter(incident.get_category_display() for incident in incidents)
     max_category_total = max(category_counter.values(), default=1)
@@ -45,10 +52,12 @@ def build_analytics_dashboard():
 
     return {
         "total_incidents": total_incidents,
-        "verified_incidents": total_incidents,
-        "public_posts": total_incidents,
+        "verified_incidents": verified_incidents,
+        "public_posts": verified_incidents,
         "most_common_type": most_common_type,
         "category_breakdown": category_breakdown,
         "frequency_points": frequency_points,
         "frequency_line_points": line_points,
+        "analyzed_label": analyzed_label,
+        "analytics_scope": scope,
     }

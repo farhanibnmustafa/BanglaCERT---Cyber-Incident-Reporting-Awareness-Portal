@@ -79,6 +79,93 @@ class IncidentWorkflowTests(TestCase):
         self.assertIsNone(incident.created_by)
         self.assertTrue(incident.is_anonymous)
         self.assertEqual(incident.reporter_email, "guest@example.com")
+        self.assertTrue(incident.public_tracking_id)
+        self.assertTrue(incident.public_tracking_token)
+
+    def test_guest_user_can_submit_anonymous_report_without_email(self):
+        response = self.client.post(
+            reverse("incidents:public_report"),
+            {
+                "title": "Anonymous Without Email",
+                "category": "malware",
+                "description": "Guest submitted malware report without contact details.",
+                "incident_date": "2026-03-02",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("incidents:public_report_success"))
+        incident = Incident.objects.get(title="Anonymous Without Email")
+        self.assertIsNone(incident.created_by)
+        self.assertTrue(incident.is_anonymous)
+        self.assertEqual(incident.reporter_email, "")
+        self.assertTrue(incident.public_tracking_id)
+        self.assertTrue(incident.public_tracking_token)
+        self.assertEqual(self.client.session["public_report_tracking"]["tracking_id"], incident.public_tracking_id)
+
+    def test_public_report_success_shows_tracking_credentials(self):
+        self.client.post(
+            reverse("incidents:public_report"),
+            {
+                "title": "Anonymous Follow Up",
+                "category": "phishing",
+                "description": "Store the tracking credentials after submission.",
+                "incident_date": "2026-03-02",
+            },
+        )
+
+        incident = Incident.objects.get(title="Anonymous Follow Up")
+        response = self.client.get(reverse("incidents:public_report_success"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, incident.public_tracking_id)
+        self.assertContains(response, incident.public_tracking_token)
+
+    def test_guest_can_check_anonymous_report_status_with_tracking_credentials(self):
+        incident = Incident.objects.create(
+            title="Lookup Incident",
+            category="fraud",
+            description="Anonymous status lookup should work.",
+            incident_date=date(2026, 3, 2),
+            is_anonymous=True,
+            public_tracking_id="BC-000123-ABCD",
+            public_tracking_token="secret-token-value",
+        )
+
+        response = self.client.post(
+            reverse("incidents:public_report_status"),
+            {
+                "tracking_id": incident.public_tracking_id.lower(),
+                "access_token": incident.public_tracking_token,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Lookup Incident")
+        self.assertContains(response, incident.get_status_display())
+
+    def test_anonymous_status_lookup_rejects_invalid_credentials(self):
+        Incident.objects.create(
+            title="Protected Incident",
+            category="other",
+            description="Should not be visible with bad credentials.",
+            incident_date=date(2026, 3, 2),
+            is_anonymous=True,
+            public_tracking_id="BC-000124-EEEE",
+            public_tracking_token="correct-token",
+        )
+
+        response = self.client.post(
+            reverse("incidents:public_report_status"),
+            {
+                "tracking_id": "BC-000124-EEEE",
+                "access_token": "wrong-token",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Tracking ID or access token is invalid.")
+        self.assertNotContains(response, "Protected Incident")
 
     def test_normal_user_can_upload_evidence_when_reporting_incident(self):
         self.client.login(username="normaluser", password="pass12345")
@@ -167,6 +254,33 @@ class IncidentWorkflowTests(TestCase):
         self.assertIn("/admin/", list_response.url)
         self.assertIn("/admin/", detail_response.url)
 
+    def test_home_page_shows_awareness_and_analytics_sections(self):
+        Incident.objects.create(
+            title="Verified Public Post",
+            category="phishing",
+            description="Visible on home page.",
+            incident_date=date(2026, 3, 4),
+            status=Incident.STATUS_VERIFIED,
+            created_by=self.user,
+        )
+
+        response = self.client.get(reverse("incidents:home"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "incidents/home.html")
+        self.assertContains(response, "Cyber Awareness Posts")
+        self.assertContains(response, "Incident Analytics")
+        self.assertContains(response, "Verified Public Post")
+
+    def test_authenticated_user_navigation_shows_my_reports_without_separate_report_link(self):
+        self.client.login(username="normaluser", password="pass12345")
+
+        response = self.client.get(reverse("incidents:home"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f'href="{reverse("incidents:my_incidents")}">My Reports</a>')
+        self.assertNotContains(response, f'href="{reverse("incidents:report")}">Report Incident</a>')
+
     def test_normal_user_can_comment_only_on_own_incident(self):
         own_incident = Incident.objects.create(
             title="Own Incident",
@@ -233,6 +347,35 @@ class IncidentWorkflowTests(TestCase):
         self.assertTemplateUsed(response, "incidents/admin_dashboard.html")
         self.assertContains(response, "Queue Item")
 
+    def test_admin_dashboard_analytics_use_all_reported_incidents(self):
+        Incident.objects.create(
+            title="Verified Queue Item",
+            category="phishing",
+            description="Verified incident included in all-incident analytics.",
+            incident_date=date(2026, 3, 1),
+            status=Incident.STATUS_VERIFIED,
+            created_by=self.user,
+        )
+        Incident.objects.create(
+            title="Pending Malware Queue Item",
+            category="malware",
+            description="Pending incident should still count in admin analytics.",
+            incident_date=date(2026, 3, 2),
+            status=Incident.STATUS_PENDING,
+            created_by=self.user,
+        )
+
+        self.client.login(username="adminuser", password="pass12345")
+        response = self.client.get(reverse("admin:index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["total_incidents"], 2)
+        self.assertEqual(response.context["verified_incidents"], 1)
+        self.assertEqual(response.context["public_posts"], 1)
+        self.assertContains(response, "Reported Incidents Analyzed")
+        self.assertContains(response, "Pending Malware Queue Item")
+        self.assertContains(response, "Malware")
+
     def test_staff_dashboard_navigation_shows_single_dashboard_link(self):
         self.client.login(username="adminuser", password="pass12345")
         response = self.client.get(reverse("admin:index"))
@@ -241,6 +384,14 @@ class IncidentWorkflowTests(TestCase):
         self.assertContains(response, f'href="{reverse("admin:index")}">Dashboard</a>')
         self.assertNotContains(response, f'href="{reverse("incidents:home")}">Home</a>')
         self.assertNotContains(response, 'href="/admin/">Admin Dashboard</a>')
+
+    def test_my_reports_page_includes_create_report_link(self):
+        self.client.login(username="normaluser", password="pass12345")
+
+        response = self.client.get(reverse("incidents:my_incidents"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f'href="{reverse("incidents:report")}">Create New Report</a>')
 
     @override_settings(TIME_ZONE="Asia/Dhaka", USE_TZ=True)
     def test_my_reports_display_submitted_time_in_dhaka_timezone(self):

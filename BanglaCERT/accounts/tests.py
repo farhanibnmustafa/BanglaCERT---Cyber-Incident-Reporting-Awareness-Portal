@@ -2,6 +2,8 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
+from incidents.models import Incident
+
 
 User = get_user_model()
 
@@ -90,6 +92,59 @@ class AccountFlowTests(TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertIn("/incidents/mine/", response.url)
+
+    def test_normal_user_login_honors_safe_next_redirect(self):
+        user = User.objects.create_user(
+            username="reader1",
+            email="reader1@example.com",
+            password="pass12345",
+        )
+        incident = Incident.objects.create(
+            title="Verified Awareness Post",
+            category="phishing",
+            description="Visible awareness post.",
+            incident_date="2026-03-01",
+            status=Incident.STATUS_VERIFIED,
+            created_by=user,
+        )
+        next_url = reverse("awareness:detail", args=[incident.id])
+
+        response = self.client.post(
+            f"{reverse('accounts:login')}?next={next_url}",
+            {"email": "reader1@example.com", "password": "pass12345", "next": next_url},
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, next_url)
+
+    def test_registration_honors_safe_next_redirect(self):
+        user = User.objects.create_user(
+            username="reader2",
+            email="reader2@example.com",
+            password="pass12345",
+        )
+        incident = Incident.objects.create(
+            title="Verified Awareness Post 2",
+            category="malware",
+            description="Visible awareness post for registration redirect.",
+            incident_date="2026-03-02",
+            status=Incident.STATUS_VERIFIED,
+            created_by=user,
+        )
+        next_url = reverse("awareness:detail", args=[incident.id])
+
+        response = self.client.post(
+            f"{reverse('accounts:register')}?next={next_url}",
+            {
+                "email": "brandnew@example.com",
+                "password1": "StrongPass123!",
+                "password2": "StrongPass123!",
+                "next": next_url,
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, next_url)
 
     def test_staff_login_page_is_available(self):
         response = self.client.get(reverse("accounts:staff_login"))

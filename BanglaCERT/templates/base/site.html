@@ -24,6 +24,11 @@
             --accent: #0a7cff;
             --accent-deep: #083d8c;
             --success: #14b8a6;
+            --button-bg: linear-gradient(135deg, #143f86 0%, #0d3270 55%, #08244f 100%);
+            --button-bg-hover: linear-gradient(135deg, #194b9b 0%, #11408b 55%, #0a2f6b 100%);
+            --button-border: rgba(7, 31, 72, 0.9);
+            --button-text: #f4f8ff;
+            --button-shadow: 0 12px 24px rgba(7, 31, 72, 0.28);
             --shadow: 0 24px 60px rgba(20, 38, 68, 0.12);
             --radius-lg: 26px;
             --radius-md: 18px;
@@ -375,25 +380,28 @@
             min-height: 42px;
             padding: 10px 16px;
             border-radius: 999px;
-            border: 1px solid rgba(38, 212, 255, 0.32);
-            background: linear-gradient(135deg, rgba(143, 243, 255, 0.2), rgba(9, 111, 238, 0.16));
-            color: #effaff;
+            border: 1px solid var(--button-border);
+            background: var(--button-bg);
+            color: var(--button-text);
             font-weight: 700;
             text-decoration: none;
             cursor: pointer;
             transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-            box-shadow: 0 10px 22px rgba(3, 72, 136, 0.16);
+            box-shadow: var(--button-shadow);
         }
         button { font: inherit; }
         .light-button {
-            color: var(--accent-deep);
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(226, 248, 255, 0.9));
+            color: var(--button-text);
+            border-color: rgba(12, 52, 111, 0.95);
+            background: linear-gradient(135deg, #1b4a97 0%, #123a7b 55%, #0c2a59 100%);
+            box-shadow: 0 12px 24px rgba(10, 41, 88, 0.24);
         }
         .nav-link-button:hover,
         button:hover,
         .cta-link:hover {
+            background: var(--button-bg-hover);
             transform: translateY(-1px);
-            box-shadow: 0 14px 30px rgba(11, 68, 122, 0.18);
+            box-shadow: 0 16px 30px rgba(8, 35, 78, 0.3);
         }
         .section-link {
             display: inline-flex;
@@ -407,6 +415,12 @@
             content: "->";
             font-family: "Consolas", "Monaco", monospace;
         }
+        /* Improve readability of links and tags on dark hero backgrounds */
+        .detail-hero .section-link {
+            color: #eaf6ff;
+            text-shadow: 0 1px 3px rgba(6, 18, 40, 0.55);
+        }
+        .detail-hero .section-link::after { color: #eaf6ff; }
         .muted { color: var(--muted); }
         .tag {
             padding: 6px 10px;
@@ -420,6 +434,12 @@
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.1em;
+        }
+        .detail-hero .tag {
+            color: #eaf6ff;
+            background: rgba(143, 243, 255, 0.24);
+            border-color: rgba(143, 243, 255, 0.42);
+            text-shadow: 0 1px 2px rgba(6, 18, 40, 0.4);
         }
         .panel {
             padding: 22px;
@@ -580,6 +600,7 @@
          data-logo-url="{% static 'img/logo.png' %}"
          data-url-home="{% url 'incidents:home' %}"
          data-url-admin="{% url 'admin:index' %}"
+         data-url-awareness="{% url 'awareness:list' %}"
          data-url-report="{% url 'incidents:public_report' %}"
          data-url-my-reports="{% url 'incidents:my_incidents' %}"
          data-url-login="{% url 'accounts:login' %}"
