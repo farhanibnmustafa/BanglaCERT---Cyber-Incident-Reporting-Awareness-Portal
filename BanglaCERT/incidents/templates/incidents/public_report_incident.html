@@ -1,0 +1,46 @@
+{% extends "base/site.html" %}
+
+{% block title %}Public Report Incident | BanglaCERT{% endblock %}
+
+{% block content %}
+<h1>Report a Cyber Incident</h1>
+<p class="muted">Submit incident details without signing in. Public reports are treated as anonymous, and email is optional if you want status notifications.</p>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <p>
+        <label for="{{ form.title.id_for_label }}">Title</label>
+        {{ form.title }}
+        {{ form.title.errors }}
+    </p>
+    <p>
+        <label for="{{ form.category.id_for_label }}">Category</label>
+        {{ form.category }}
+        {{ form.category.errors }}
+    </p>
+    <p>
+        <label for="{{ form.description.id_for_label }}">Description</label>
+        {{ form.description }}
+        {{ form.description.errors }}
+    </p>
+    <p>
+        <label for="{{ form.incident_date.id_for_label }}">Incident Date</label>
+        {{ form.incident_date }}
+        {{ form.incident_date.errors }}
+    </p>
+    <p>
+        <label for="{{ form.reporter_email.id_for_label }}">Email for status updates</label>
+        {{ form.reporter_email }}
+        {{ form.reporter_email.errors }}
+        <span class="muted">{{ form.reporter_email.help_text }}</span>
+    </p>
+    <p>
+        <label for="{{ form.evidence_files.id_for_label }}">Evidence files</label>
+        {{ form.evidence_files }}
+        {{ form.evidence_files.errors }}
+        <span class="muted">{{ form.evidence_files.help_text }}</span>
+    </p>
+    <button type="submit">Submit Report</button>
+</form>
+<p><a href="{% url 'incidents:public_report_status' %}">Check an existing anonymous report status</a></p>
+{% endblock %}

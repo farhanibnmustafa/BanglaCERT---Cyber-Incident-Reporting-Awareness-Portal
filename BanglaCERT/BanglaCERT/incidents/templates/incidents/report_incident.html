@@ -1,0 +1,13 @@
+{% extends "base/site.html" %}
+
+{% block title %}Report Incident | BanglaCERT{% endblock %}
+
+{% block content %}
+<h1>Report Incident</h1>
+<p class="muted">Submit incident details for review by administrators.</p>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Submit Report</button>
+</form>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base/site.html" %}
+{% load tz %}
+
+{% block title %}My Reports | BanglaCERT{% endblock %}
+
+{% block content %}
+<section class="section-block">
+<span class="eyebrow">Reporter Workspace</span>
+<h1>My Incident Reports</h1>
+<p class="lede">Track every incident you submitted, monitor status changes, and open any report for more detail.</p>
+<p><a class="cta-link light-button" href="{% url 'incidents:report' %}">Create New Report</a></p>
+{% if incidents %}
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Status</th>
+                <th>Submitted</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for incident in incidents %}
+                <tr>
+                    <td>{{ incident.id }}</td>
+                    <td><a href="{% url 'incidents:detail' incident.id %}">{{ incident.title }}</a></td>
+                    <td>{{ incident.get_category_display }}</td>
+                    <td><span class="tag">{{ incident.get_status_display }}</span></td>
+                    <td>{{ incident.created_at|localtime|date:"Y-m-d H:i" }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No incident reports yet.</p>
+{% endif %}
+</section>
+{% endblock %}
