@@ -96,9 +96,41 @@ class IncidentPublicReportForm(IncidentEvidenceMixin, forms.ModelForm):
             "reporter_email": "Email for status updates",
         }
         help_texts = {
-            "reporter_email": "Used only for status update notifications.",
+            "reporter_email": "Optional. Used only for status update notifications.",
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["reporter_email"].required = True
+        self.fields["reporter_email"].required = False
+        self.fields["reporter_email"].widget.attrs.update(
+            {
+                "placeholder": "Optional: add an email for status updates",
+                "autocomplete": "email",
+            }
+        )
+
+
+class AnonymousIncidentStatusLookupForm(forms.Form):
+    tracking_id = forms.CharField(required=True, label="Tracking ID")
+    access_token = forms.CharField(required=True, label="Access token")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["tracking_id"].widget.attrs.update(
+            {
+                "placeholder": "Enter your tracking ID",
+                "autocomplete": "off",
+            }
+        )
+        self.fields["access_token"].widget.attrs.update(
+            {
+                "placeholder": "Enter your access token",
+                "autocomplete": "off",
+            }
+        )
+
+    def clean_tracking_id(self):
+        return (self.cleaned_data.get("tracking_id") or "").strip().upper()
+
+    def clean_access_token(self):
+        return (self.cleaned_data.get("access_token") or "").strip()

@@ -12,7 +12,7 @@
         <div class="auth-brand">
             <div class="hero-brand">
                 <div class="brand-row">
-                    <img class="brand-logo" src="{% static 'admin/img/BanglaCERT-logo.png' %}" alt="BanglaCERT">
+                    <img class="brand-logo" src="{% static 'img/logo.png' %}" alt="BanglaCERT">
                 </div>
                 <div class="brand-subtitle">Cyber Incident Reporting &amp; Awareness Portal</div>
             </div>
@@ -37,6 +37,9 @@
 
                 <form method="post" novalidate>
                     {% csrf_token %}
+                    {% if next_url %}
+                        <input type="hidden" name="next" value="{{ next_url }}">
+                    {% endif %}
 
                     <div class="auth-field">
                         <label for="{{ form.full_name.id_for_label }}">Full Name</label>
@@ -80,7 +83,7 @@
             </div>
 
             <div class="auth-card-footer">
-                Already have an account? <a href="{% url 'accounts:login' %}">Sign In</a>
+                Already have an account? <a href="{% url 'accounts:login' %}{% if next_url %}?next={{ next_url|urlencode }}{% endif %}">Sign In</a>
             </div>
         </div>
         <p class="auth-note">Passwords are securely hashed for your protection.</p>

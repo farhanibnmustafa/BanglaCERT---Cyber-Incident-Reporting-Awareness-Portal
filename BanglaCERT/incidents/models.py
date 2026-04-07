@@ -1,3 +1,4 @@
+import secrets
 from pathlib import Path
 from uuid import uuid4
 
@@ -61,6 +62,8 @@ class Incident(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    public_tracking_id = models.CharField(max_length=32, unique=True, null=True, blank=True, db_index=True)
+    public_tracking_token = models.CharField(max_length=64, null=True, blank=True)
 
     def __str__(self) -> str:
         return f"{self.title} ({self.status})"
@@ -70,6 +73,18 @@ class Incident(models.Model):
         if self.is_anonymous or not self.created_by:
             return "Anonymous"
         return self.created_by.username
+
+    def ensure_public_tracking_credentials(self):
+        updated_fields = []
+        if not self.public_tracking_id:
+            if not self.pk:
+                raise ValueError("Tracking credentials require a saved incident.")
+            self.public_tracking_id = f"BC-{self.pk:06d}-{secrets.token_hex(2).upper()}"
+            updated_fields.append("public_tracking_id")
+        if not self.public_tracking_token:
+            self.public_tracking_token = secrets.token_hex(16)
+            updated_fields.append("public_tracking_token")
+        return updated_fields
 
 
 class IncidentComment(models.Model):

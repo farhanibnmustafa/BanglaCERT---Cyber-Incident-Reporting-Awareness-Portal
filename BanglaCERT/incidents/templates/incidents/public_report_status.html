@@ -1,0 +1,44 @@
+{% extends "base/site.html" %}
+
+{% block title %}Check Anonymous Report Status | BanglaCERT{% endblock %}
+
+{% block content %}
+<section class="section-block">
+    <span class="eyebrow">Anonymous Tracking</span>
+    <h1>Check Report Status</h1>
+    <p class="lede">Enter the tracking ID and access token you received when the anonymous report was submitted.</p>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <p>
+            <label for="{{ form.tracking_id.id_for_label }}">Tracking ID</label>
+            {{ form.tracking_id }}
+            {{ form.tracking_id.errors }}
+        </p>
+        <p>
+            <label for="{{ form.access_token.id_for_label }}">Access token</label>
+            {{ form.access_token }}
+            {{ form.access_token.errors }}
+        </p>
+        <button type="submit">Check Status</button>
+    </form>
+</section>
+
+{% if incident %}
+    <section class="section-block">
+        <span class="eyebrow">Report Status</span>
+        <h2>{{ incident.title }}</h2>
+        <p><strong>Status</strong>: {{ incident.get_status_display }}</p>
+        <p><strong>Category</strong>: {{ incident.get_category_display }}</p>
+        <p><strong>Incident date</strong>: {{ incident.incident_date|date:"Y-m-d" }}</p>
+        <p><strong>Submitted at</strong>: {{ incident.created_at|date:"Y-m-d H:i" }}</p>
+        <p><strong>Last updated</strong>: {{ incident.updated_at|date:"Y-m-d H:i" }}</p>
+        {% if incident.reporter_email %}
+            <p>Email notifications are enabled for {{ incident.reporter_email }}.</p>
+        {% else %}
+            <p>No email notifications are configured for this report.</p>
+        {% endif %}
+    </section>
+{% endif %}
+{% endblock %}

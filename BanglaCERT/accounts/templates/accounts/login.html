@@ -12,7 +12,7 @@
         <div class="auth-brand">
             <div class="hero-brand">
                 <div class="brand-row">
-                    <img class="brand-logo" src="{% static 'admin/img/BanglaCERT-logo.png' %}" alt="BanglaCERT">
+                    <img class="brand-logo" src="{% static 'img/logo.png' %}" alt="BanglaCERT">
                 </div>
                 <div class="brand-subtitle">Cyber Incident Reporting &amp; Awareness Portal</div>
             </div>
@@ -45,6 +45,9 @@
 
                 <form method="post" novalidate>
                     {% csrf_token %}
+                    {% if next_url %}
+                        <input type="hidden" name="next" value="{{ next_url }}">
+                    {% endif %}
                     <div class="auth-field">
                         <label for="{{ form.email.id_for_label }}">Email Address or Username</label>
                         {{ form.email }}
@@ -74,7 +77,7 @@
                             <p class="anon-title">Normal User?</p>
                             <p class="anon-subtitle">Use the regular login page for reporting incidents and user features.</p>
                         </div>
-                        <a class="auth-btn auth-btn-green" href="{% url 'accounts:login' %}">User Login</a>
+                        <a class="auth-btn auth-btn-green" href="{% url 'accounts:login' %}{% if next_url %}?next={{ next_url|urlencode }}{% endif %}">User Login</a>
                     </div>
                 {% else %}
                     <div class="anon-box">
@@ -89,11 +92,11 @@
 
             {% if staff_login %}
                 <div class="auth-card-footer">
-                    Need public access? <a href="{% url 'accounts:login' %}">Go to User Login</a>
+                    Need public access? <a href="{% url 'accounts:login' %}{% if next_url %}?next={{ next_url|urlencode }}{% endif %}">Go to User Login</a>
                 </div>
             {% else %}
                 <div class="auth-card-footer">
-                    New to BanglaCERT? <a href="{% url 'accounts:register' %}">Create an Account</a>
+                    New to BanglaCERT? <a href="{% url 'accounts:register' %}{% if next_url %}?next={{ next_url|urlencode }}{% endif %}">Create an Account</a>
                 </div>
             {% endif %}
         </div>

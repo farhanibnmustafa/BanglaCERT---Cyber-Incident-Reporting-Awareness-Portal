@@ -12,4 +12,5 @@ EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 
 MIGRATION_MODULES = {
     "incidents": None,
+    "awareness": None,
 }

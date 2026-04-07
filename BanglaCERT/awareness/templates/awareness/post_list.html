@@ -1,0 +1,13 @@
+{% extends "base/site.html" %}
+
+{% block title %}Verified Posts | BanglaCERT{% endblock %}
+
+{% block content %}
+<section id="awareness" class="section-block">
+    <span class="eyebrow">Public Signal Feed</span>
+    <h1>Cyber Awareness Posts</h1>
+    <p class="lede">Verified incidents are surfaced here as readable public warnings, with confidential details masked before publication.</p>
+
+    {% include "search/_results.html" with incidents=incidents %}
+</section>
+{% endblock %}

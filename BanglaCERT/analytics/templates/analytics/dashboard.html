@@ -1,0 +1,79 @@
+{% extends "base/site.html" %}
+
+{% block title %}Incident Analytics | BanglaCERT{% endblock %}
+
+{% block content %}
+<h1>Incident Analytics Dashboard</h1>
+<p class="muted">This dashboard summarizes reported incidents and highlights common attack types and incident frequency.</p>
+
+<section class="row" style="margin-bottom: 24px;">
+    <div class="col" style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px;">
+        <p class="muted" style="margin-top: 0;">Total Incidents</p>
+        <h2 style="margin: 0;">{{ total_incidents }}</h2>
+    </div>
+    <div class="col" style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px;">
+        <p class="muted" style="margin-top: 0;">Verified Incidents</p>
+        <h2 style="margin: 0;">{{ verified_incidents }}</h2>
+    </div>
+    <div class="col" style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px;">
+        <p class="muted" style="margin-top: 0;">Public Awareness Posts</p>
+        <h2 style="margin: 0;">{{ public_posts }}</h2>
+    </div>
+    <div class="col" style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px;">
+        <p class="muted" style="margin-top: 0;">Most Common Attack</p>
+        <h2 style="margin: 0;">{{ most_common_type }}</h2>
+    </div>
+</section>
+
+<section style="margin-bottom: 28px;">
+    <h2>Attack Type Chart</h2>
+    {% if category_breakdown %}
+        {% for item in category_breakdown %}
+            <div style="display: grid; grid-template-columns: 160px 1fr 40px; gap: 12px; align-items: center; margin-bottom: 12px;">
+                <strong>{{ item.label }}</strong>
+                <div style="background: #e5e7eb; border-radius: 999px; height: 14px; overflow: hidden;">
+                    <div style="background: #0f172a; width: {{ item.width }}%; height: 14px;"></div>
+                </div>
+                <span>{{ item.count }}</span>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No incident data is available yet.</p>
+    {% endif %}
+</section>
+
+<section>
+    <h2>Incident Frequency Graph</h2>
+    {% if frequency_points %}
+        <div style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px;">
+            <svg viewBox="0 0 300 150" width="100%" height="180" role="img" aria-label="Incident frequency trend line">
+                <line x1="20" y1="130" x2="280" y2="130" stroke="#cbd5e1" stroke-width="1"></line>
+                <line x1="20" y1="20" x2="20" y2="130" stroke="#cbd5e1" stroke-width="1"></line>
+                <polyline
+                    fill="none"
+                    stroke="#2563eb"
+                    stroke-width="3"
+                    points="{{ frequency_line_points }}"
+                ></polyline>
+                {% for point in frequency_points %}
+                    <circle cx="{{ point.x }}" cy="{{ point.y }}" r="4" fill="#0f172a"></circle>
+                {% endfor %}
+            </svg>
+
+            <div style="display: grid; grid-template-columns: repeat({{ frequency_points|length }}, minmax(0, 1fr)); gap: 8px; align-items: end;">
+                {% for point in frequency_points %}
+                    <div style="text-align: center;">
+                        <div style="height: 130px; display: flex; align-items: end; justify-content: center; margin-bottom: 8px;">
+                            <div style="width: 28px; background: #93c5fd; border-radius: 8px 8px 0 0; height: {{ point.height }}px;"></div>
+                        </div>
+                        <strong style="display: block;">{{ point.count }}</strong>
+                        <span class="muted" style="font-size: 12px;">{{ point.label }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% else %}
+        <p>No incident trend data is available yet.</p>
+    {% endif %}
+</section>
+{% endblock %}
