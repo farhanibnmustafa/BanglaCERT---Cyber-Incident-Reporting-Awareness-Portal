@@ -1,53 +1,13 @@
 {% extends "base/site.html" %}
 
-{% block title %}Awareness | BanglaCERT{% endblock %}
+{% block title %}Verified Posts | BanglaCERT{% endblock %}
 
 {% block content %}
-<h1>Cyber Awareness Posts</h1>
-<p class="muted">Only verified incidents are published here for public awareness, and sensitive details are masked.</p>
+<section id="awareness" class="section-block">
+    <span class="eyebrow">Public Signal Feed</span>
+    <h1>Cyber Awareness Posts</h1>
+    <p class="lede">Verified incidents are surfaced here as readable public warnings, with confidential details masked before publication.</p>
 
-{% if incidents %}
-    {% for incident in incidents %}
-        <article style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; margin-bottom: 16px;">
-            <div style="display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-                <div>
-                    <h2 style="margin: 0 0 6px 0;">
-                        <a href="{% url 'awareness:detail' incident.id %}">{{ incident.public_title }}</a>
-                    </h2>
-                    <p class="muted" style="margin: 0;">
-                        {{ incident.get_category_display }} | {{ incident.incident_date|date:"F j, Y" }}
-                    </p>
-                </div>
-                <span class="tag">Verified</span>
-            </div>
-
-            <p style="margin: 14px 0;">{{ incident.public_excerpt }}</p>
-            <p class="muted" style="margin: 0 0 12px 0;">
-                Likes: {{ incident.likes_total }} |
-                Comments: {{ incident.comments_total }} |
-                Shares: {{ incident.shares_total }}
-            </p>
-
-            <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                {% if user.is_authenticated %}
-                    <form method="post" action="{% url 'awareness:toggle_like' incident.id %}" style="margin: 0;">
-                        {% csrf_token %}
-                        <button type="submit">{% if incident.user_has_liked %}Unlike{% else %}Like{% endif %}</button>
-                    </form>
-                {% else %}
-                    <a href="{% url 'accounts:login' %}?next={{ request.path }}">Login to Like</a>
-                {% endif %}
-
-                <form method="post" action="{% url 'awareness:share' incident.id %}" style="margin: 0;">
-                    {% csrf_token %}
-                    <button type="submit">Share</button>
-                </form>
-
-                <a href="{% url 'awareness:detail' incident.id %}">Open Post</a>
-            </div>
-        </article>
-    {% endfor %}
-{% else %}
-    <p>No verified awareness posts are available yet.</p>
-{% endif %}
+    {% include "search/_results.html" with incidents=incidents %}
+</section>
 {% endblock %}

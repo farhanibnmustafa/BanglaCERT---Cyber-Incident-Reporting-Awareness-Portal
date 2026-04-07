@@ -1,5 +1,5 @@
 import React from 'react';
-import { ThumbsUp, MessageCircle, Share2, ShieldCheck, MoreHorizontal, ExternalLink } from 'lucide-react';
+import { ThumbsUp, MessageCircle, Share2, ShieldCheck, MoreHorizontal } from 'lucide-react';
 import './PostCard.css';
 
 const PostCard = ({ 
@@ -20,8 +20,50 @@ const PostCard = ({
     csrfToken
 }) => {
     const [isExpanded, setIsExpanded] = React.useState(false);
+    const [liked, setLiked] = React.useState(userHasLiked);
+    const [likesCount, setLikesCount] = React.useState(Number(likes) || 0);
+    const [isLikePending, setIsLikePending] = React.useState(false);
     const EXCERPT_LIMIT = 180;
     const isLongPost = excerpt.length > EXCERPT_LIMIT;
+    const postAnchor = `#awareness-post-${id}`;
+    const currentReturnUrl =
+        typeof window !== 'undefined'
+            ? `${window.location.pathname}${window.location.search}${postAnchor}`
+            : detailUrl;
+
+    const handleLikeSubmit = async (event) => {
+        event.preventDefault();
+
+        if (isLikePending) {
+            return;
+        }
+
+        const form = event.currentTarget;
+        setIsLikePending(true);
+
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error(`Like request failed with status ${response.status}`);
+            }
+
+            const nextLiked = !liked;
+            setLiked(nextLiked);
+            setLikesCount((previousCount) => Math.max(0, previousCount + (nextLiked ? 1 : -1)));
+        } catch (error) {
+            form.submit();
+        } finally {
+            setIsLikePending(false);
+        }
+    };
     
     // Determine what text to show based on expansion state
     const displayText = isExpanded ? excerpt : excerpt.slice(0, EXCERPT_LIMIT);
@@ -76,7 +118,7 @@ const PostCard = ({
                             <ThumbsUp size={10} fill="white" stroke="white" />
                         </div>
                     </div>
-                    <span>{likes}</span>
+                    <span>{likesCount}</span>
                 </div>
                 <div className="fb-stat-right">
                     <span>{comments} comments • {shares} shares</span>
@@ -87,15 +129,21 @@ const PostCard = ({
             <footer className="fb-post-actions">
                 <div className="fb-action-buttons-grid">
                     {isAuthenticated ? (
-                        <form method="post" action={toggleLikeUrl}>
+                        <form method="post" action={toggleLikeUrl} onSubmit={handleLikeSubmit}>
                             <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
-                            <button type="submit" className={`fb-action-btn ${userHasLiked ? 'active' : ''}`}>
+                            <input type="hidden" name="next" value={currentReturnUrl} />
+                            <button
+                                type="submit"
+                                className={`fb-action-btn ${liked ? 'active' : ''}`}
+                                aria-pressed={liked}
+                                disabled={isLikePending}
+                            >
                                 <ThumbsUp size={18} />
-                                <span>{userHasLiked ? 'Liked' : 'Like'}</span>
+                                <span>{liked ? 'Liked' : 'Like'}</span>
                             </button>
                         </form>
                     ) : (
-                        <a href={`/accounts/login/?next=${window.location.pathname}`} className="fb-action-btn">
+                        <a href={`/accounts/login/?next=${encodeURIComponent(currentReturnUrl)}`} className="fb-action-btn">
                             <ThumbsUp size={18} />
                             <span>Like</span>
                         </a>
@@ -106,16 +154,9 @@ const PostCard = ({
                         <span>Comment</span>
                     </a>
 
-                    <form method="post" action={shareUrl}>
-                        <input type="hidden" name="csrfmiddlewaretoken" value={csrfToken} />
-                        <button type="submit" className="fb-action-btn">
-                            <Share2 size={18} />
-                            <span>Share</span>
-                        </button>
-                    </form>
-
-                    <a href={detailUrl} className="fb-action-btn fb-action-link-btn" title="Open post">
-                        <ExternalLink size={18} />
+                    <a href={detailUrl} className="fb-action-btn">
+                        <Share2 size={18} />
+                        <span>Share</span>
                     </a>
                 </div>
             </footer>

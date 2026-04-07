@@ -1,21 +1,44 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseNotAllowed
-from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 
 from .forms import AwarenessCommentForm
 from .models import AwarenessComment, AwarenessLike, AwarenessShare
-from .services import get_public_incidents_queryset, prepare_public_incident
+from .services import (
+    get_public_incidents_queryset,
+    prepare_public_incident,
+    prepare_public_incidents,
+)
 
 
 def _get_public_incident(incident_id):
     return get_object_or_404(get_public_incidents_queryset(), id=incident_id)
 
 
+def _redirect_back_or_detail(request, incident_id):
+    return_url = (
+        request.POST.get("next")
+        or request.GET.get("next")
+        or request.META.get("HTTP_REFERER", "")
+    ).strip()
+    if return_url and url_has_allowed_host_and_scheme(
+        url=return_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return redirect(return_url)
+    return redirect("awareness:detail", incident_id=incident_id)
+
+
 def post_list(request):
-    return HttpResponseRedirect(f"{reverse('incidents:home')}#awareness")
+    incidents = prepare_public_incidents(
+        get_public_incidents_queryset(),
+        user=request.user,
+    )
+    return render(request, "awareness/post_list.html", {"incidents": incidents})
 
 
 def post_detail(request, incident_id):
@@ -42,7 +65,7 @@ def toggle_like(request, incident_id):
     else:
         like.delete()
         messages.success(request, "Like removed.")
-    return redirect("awareness:detail", incident_id=incident.id)
+    return _redirect_back_or_detail(request, incident.id)
 
 
 @login_required
@@ -76,4 +99,4 @@ def share_post(request, incident_id):
         request,
         f"Share this verified post with this link: {request.build_absolute_uri(reverse('awareness:detail', args=[incident.id]))}",
     )
-    return redirect("awareness:detail", incident_id=incident.id)
+    return _redirect_back_or_detail(request, incident.id)

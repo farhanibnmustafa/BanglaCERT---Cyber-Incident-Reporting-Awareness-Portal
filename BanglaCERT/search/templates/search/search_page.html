@@ -55,6 +55,9 @@
             .then((response) => response.text())
             .then((html) => {
                 results.innerHTML = html;
+                if (typeof window.mountBanglaCERTPostCards === "function") {
+                    window.mountBanglaCERTPostCards(results);
+                }
             });
     };
 

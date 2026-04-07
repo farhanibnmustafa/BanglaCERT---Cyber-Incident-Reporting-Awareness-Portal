@@ -7,20 +7,125 @@
 <h1>Incident Admin Dashboard</h1>
 <p class="muted">Review submitted incidents, filter the queue, and record staff decisions.</p>
 
+{% if can_manage_staff_users %}
 <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px;">
-    {% if can_manage_staff_users %}
-        <a href="{% url 'admin:staff_accounts' %}">Staff Accounts</a>
-    {% endif %}
+        <a
+            href="{% url 'admin:staff_accounts' %}"
+            style="
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                padding: 10px 16px;
+                border-radius: 999px;
+                border: 1px solid rgba(8, 34, 82, 0.92);
+                background: linear-gradient(135deg, #143f86 0%, #0d3270 55%, #08244f 100%);
+                color: #f4f8ff;
+                font-weight: 800;
+                letter-spacing: 0.04em;
+                text-decoration: none;
+                box-shadow: 0 12px 24px rgba(8, 31, 74, 0.24);
+            "
+        >
+            Staff Accounts
+        </a>
+</div>
+{% endif %}
+
+<div style="margin: 22px 0 26px 0;">
+    <p class="muted" style="margin: 0 0 12px 0; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700;">Status Snapshot</p>
 </div>
 
-<div class="row" style="margin: 18px 0; flex-wrap: wrap;">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin: 0 0 28px 0;">
     {% for item in status_summary %}
-        <div class="col" style="min-width: 140px; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px;">
-            <div class="muted" style="font-size: 13px;">{{ item.label }}</div>
-            <div style="font-size: 24px; font-weight: 700;">{{ item.count }}</div>
+        <div
+            style="
+                border-radius: 20px;
+                padding: 18px 18px 16px 18px;
+                border: 1px solid
+                {% if item.value == 'PENDING' %}rgba(245, 158, 11, 0.38)
+                {% elif item.value == 'UNDER_REVIEW' %}rgba(59, 130, 246, 0.36)
+                {% elif item.value == 'NEEDS_CLARIFICATION' %}rgba(249, 115, 22, 0.36)
+                {% elif item.value == 'VERIFIED' %}rgba(16, 185, 129, 0.36)
+                {% elif item.value == 'REJECTED' %}rgba(239, 68, 68, 0.36)
+                {% else %}rgba(100, 116, 139, 0.36){% endif %};
+                background:
+                {% if item.value == 'PENDING' %}linear-gradient(180deg, rgba(255, 251, 235, 0.96), rgba(254, 243, 199, 0.9))
+                {% elif item.value == 'UNDER_REVIEW' %}linear-gradient(180deg, rgba(239, 246, 255, 0.96), rgba(219, 234, 254, 0.9))
+                {% elif item.value == 'NEEDS_CLARIFICATION' %}linear-gradient(180deg, rgba(255, 247, 237, 0.96), rgba(254, 215, 170, 0.9))
+                {% elif item.value == 'VERIFIED' %}linear-gradient(180deg, rgba(236, 253, 245, 0.96), rgba(209, 250, 229, 0.9))
+                {% elif item.value == 'REJECTED' %}linear-gradient(180deg, rgba(254, 242, 242, 0.96), rgba(254, 202, 202, 0.9))
+                {% else %}linear-gradient(180deg, rgba(248, 250, 252, 0.96), rgba(226, 232, 240, 0.92)){% endif %};
+                box-shadow:
+                    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+                    0 14px 26px rgba(15, 23, 42, 0.08);
+            "
+        >
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+                <div>
+                    <div
+                        style="
+                            font-size: 12px;
+                            font-weight: 800;
+                            letter-spacing: 0.12em;
+                            text-transform: uppercase;
+                            color:
+                            {% if item.value == 'PENDING' %}#9a3412
+                            {% elif item.value == 'UNDER_REVIEW' %}#1d4ed8
+                            {% elif item.value == 'NEEDS_CLARIFICATION' %}#c2410c
+                            {% elif item.value == 'VERIFIED' %}#047857
+                            {% elif item.value == 'REJECTED' %}#b91c1c
+                            {% else %}#475569{% endif %};
+                        "
+                    >
+                        {{ item.label }}
+                    </div>
+                    <div
+                        style="
+                            margin-top: 12px;
+                            font-size: 42px;
+                            font-weight: 900;
+                            line-height: 0.95;
+                            color:
+                            {% if item.value == 'PENDING' %}#7c2d12
+                            {% elif item.value == 'UNDER_REVIEW' %}#1e3a8a
+                            {% elif item.value == 'NEEDS_CLARIFICATION' %}#9a3412
+                            {% elif item.value == 'VERIFIED' %}#065f46
+                            {% elif item.value == 'REJECTED' %}#991b1b
+                            {% else %}#334155{% endif %};
+                        "
+                    >
+                        {{ item.count }}
+                    </div>
+                </div>
+                <span
+                    style="
+                        width: 14px;
+                        height: 14px;
+                        border-radius: 999px;
+                        flex: 0 0 auto;
+                        margin-top: 2px;
+                        background:
+                        {% if item.value == 'PENDING' %}#f59e0b
+                        {% elif item.value == 'UNDER_REVIEW' %}#3b82f6
+                        {% elif item.value == 'NEEDS_CLARIFICATION' %}#f97316
+                        {% elif item.value == 'VERIFIED' %}#10b981
+                        {% elif item.value == 'REJECTED' %}#ef4444
+                        {% else %}#64748b{% endif %};
+                        box-shadow: 0 0 0 6px
+                        {% if item.value == 'PENDING' %}rgba(245, 158, 11, 0.16)
+                        {% elif item.value == 'UNDER_REVIEW' %}rgba(59, 130, 246, 0.16)
+                        {% elif item.value == 'NEEDS_CLARIFICATION' %}rgba(249, 115, 22, 0.16)
+                        {% elif item.value == 'VERIFIED' %}rgba(16, 185, 129, 0.16)
+                        {% elif item.value == 'REJECTED' %}rgba(239, 68, 68, 0.16)
+                        {% else %}rgba(100, 116, 139, 0.16){% endif %};
+                    "
+                ></span>
+            </div>
         </div>
     {% endfor %}
 </div>
+
+{% include "analytics/_dashboard_section.html" with section_id="admin-analytics" analytics_eyebrow="Operations View" analytics_heading_level="h2" analytics_title="Incident Analytics" analytics_lede="This internal analytics view uses all reported incidents, including pending, verified, rejected, and closed cases." %}
 
 <form method="get" style="margin-bottom: 18px;">
     <div class="row" style="flex-wrap: wrap;">

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, LogOut, User, ShieldAlert, BarChart3, LayoutDashboard } from 'lucide-react';
+import { Menu, X, LogOut, User, ShieldAlert, ShieldCheck, BarChart3, LayoutDashboard } from 'lucide-react';
 import './Navbar.css'; // Importing modular CSS for Navbar
 
 export default function Navbar({ username, isAuthenticated, isStaff, logoUrl, urls, csrfToken }) {
@@ -23,15 +23,21 @@ export default function Navbar({ username, isAuthenticated, isStaff, logoUrl, ur
       </button>
 
       {/* Navigation Links */}
-      <div className={`nav-links-container ${isOpen ? 'open' : ''}`}>
+        <div className={`nav-links-container ${isOpen ? 'open' : ''}`}>
         
         {/* Primary Links */}
         <div className="nav-primary">
           {isAuthenticated && isStaff ? (
-            <a href={urls.admin} className="nav-link">
-              <LayoutDashboard size={18} />
-              Dashboard
-            </a>
+            <>
+              <a href={urls.admin} className="nav-link">
+                <LayoutDashboard size={18} />
+                Dashboard
+              </a>
+              <a href={urls.awareness} className="nav-link">
+                <ShieldCheck size={18} />
+                Verified Posts
+              </a>
+            </>
           ) : (
             <a href={urls.home} className="nav-link">
               <BarChart3 size={18} />

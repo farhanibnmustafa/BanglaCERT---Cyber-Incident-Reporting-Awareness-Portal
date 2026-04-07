@@ -96,14 +96,16 @@
 }
 
 .nav-link.highlight {
-  background: linear-gradient(135deg, rgba(38, 212, 255, 0.2), rgba(16, 124, 255, 0.2));
-  border: 1px solid rgba(38, 212, 255, 0.3);
-  box-shadow: 0 8px 16px rgba(10, 38, 88, 0.16);
+  background: linear-gradient(135deg, #143f86 0%, #0d3270 58%, #08244f 100%);
+  border: 1px solid rgba(12, 49, 107, 0.95);
+  color: #f4f8ff;
+  box-shadow: 0 10px 20px rgba(8, 31, 74, 0.24);
 }
 
 .nav-link.highlight:hover {
-  background: linear-gradient(135deg, rgba(38, 212, 255, 0.3), rgba(16, 124, 255, 0.25));
-  box-shadow: 0 10px 20px rgba(10, 38, 88, 0.24);
+  background: linear-gradient(135deg, #1a4d9f 0%, #12408c 58%, #0b2f69 100%);
+  color: #ffffff;
+  box-shadow: 0 14px 24px rgba(8, 31, 74, 0.3);
 }
 
 .nav-user-menu {

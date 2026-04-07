@@ -42,6 +42,9 @@ class AnalyticsDashboardTests(TestCase):
         response = self.client.get(reverse("incidents:home"))
 
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["total_incidents"], 2)
+        self.assertEqual(response.context["verified_incidents"], 2)
+        self.assertEqual(response.context["public_posts"], 2)
         self.assertContains(response, "Verified Posts Analyzed")
         self.assertContains(response, "Verified Incidents")
         self.assertContains(response, "<h2 style=\"margin: 0;\">2</h2>", html=True)
