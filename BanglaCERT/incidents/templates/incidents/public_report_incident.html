@@ -4,7 +4,7 @@
 
 {% block content %}
 <h1>Report a Cyber Incident</h1>
-<p class="muted">Submit incident details without signing in. Public reports are treated as anonymous.</p>
+<p class="muted">Submit incident details without signing in. Public reports are treated as anonymous, and email is optional if you want status notifications.</p>
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form.non_field_errors }}
@@ -42,4 +42,5 @@
     </p>
     <button type="submit">Submit Report</button>
 </form>
-{% endblock %} 
+<p><a href="{% url 'incidents:public_report_status' %}">Check an existing anonymous report status</a></p>
+{% endblock %}
