@@ -1,0 +1,24 @@
+{
+  "name": "banglacert",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/farhanibnmustafa/BanglaCERT---Cyber-Incident-Reporting-Awareness-Portal.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/farhanibnmustafa/BanglaCERT---Cyber-Incident-Reporting-Awareness-Portal/issues"
+  },
+  "homepage": "https://github.com/farhanibnmustafa/BanglaCERT---Cyber-Incident-Reporting-Awareness-Portal#readme",
+  "dependencies": {
+    "resend": "^6.10.0"
+  }
+}
