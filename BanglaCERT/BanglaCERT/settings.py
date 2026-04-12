@@ -101,7 +101,7 @@ WSGI_APPLICATION = 'BanglaCERT.wsgi.application'
 # Local Database as fallback
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.getenv("DATABASE_URL", "postgres://banglacert_user:fam403229@localhost:5432/banglacert"),
+        default=os.getenv("DATABASE_URL", "postgres://localhost/banglacert"),
         conn_max_age=600,
         ssl_require=True if os.getenv("DATABASE_URL") else False
     )
