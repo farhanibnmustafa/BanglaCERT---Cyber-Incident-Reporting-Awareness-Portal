@@ -28,6 +28,34 @@ def _build_status_change_email(incident, previous_status, new_status):
     return subject, message
 
 
+def _build_submission_email(incident):
+    subject = f"[BanglaCERT] Incident Report Received — #{incident.id}"
+    
+    tracking_section = ""
+    if incident.public_tracking_id and incident.public_tracking_token:
+        tracking_section = (
+            f"\nYour anonymous tracking credentials:\n"
+            f"  Tracking ID   : {incident.public_tracking_id}\n"
+            f"  Access Token  : {incident.public_tracking_token}\n"
+            f"\nKeep these safe — you will need them to check your report status.\n"
+        )
+
+    message = (
+        f"Thank you for submitting your incident report to BanglaCERT.\n\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"  Report ID  : #{incident.id}\n"
+        f"  Title      : {incident.title}\n"
+        f"  Category   : {dict(incident.CATEGORY_CHOICES).get(incident.category, incident.category)}\n"
+        f"  Status     : {dict(incident.STATUS_CHOICES).get(incident.status, incident.status)}\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"{tracking_section}\n"
+        f"Our team will review your report and update you on any status changes.\n\n"
+        f"Thank you,\n"
+        f"BanglaCERT Incident Response Team"
+    )
+    return subject, message
+
+
 def _get_notification_email(incident):
     if incident.reporter_email:
         return incident.reporter_email
@@ -92,3 +120,49 @@ def notify_incident_status_change_with_reason(incident, previous_status, new_sta
 def notify_incident_status_change(incident, previous_status, new_status):
     sent, _ = notify_incident_status_change_with_reason(incident, previous_status, new_status)
     return sent
+
+
+def notify_incident_submission(incident):
+    recipient_email = _get_notification_email(incident)
+    if not recipient_email:
+        return False, "No reporter email is available for this incident."
+
+    subject, message = _build_submission_email(incident)
+
+    if getattr(settings, "NOTIFICATION_EMAIL_ASYNC", False):
+        sent, reason = _send_async(incident, recipient_email, subject, message)
+        if sent:
+            return True, reason
+        return _send_sync(incident, recipient_email, subject, message)
+
+    return _send_sync(incident, recipient_email, subject, message)
+
+
+def resend_incident_notification(incident, notification_type):
+    """
+    Force-resend a notification regardless of status change conditions.
+
+    notification_type:
+        'submission' — sends the submission confirmation again
+        'status'     — resends the current status notification
+    """
+    recipient_email = _get_notification_email(incident)
+    if not recipient_email:
+        return False, "No reporter email is available for this incident."
+
+    if notification_type == "submission":
+        subject, message = _build_submission_email(incident)
+    elif notification_type == "status":
+        subject, message = _build_status_change_email(incident, incident.status, incident.status)
+        # Override subject slightly for "reminder" context
+        subject = f"[BanglaCERT] Incident #{incident.id} Status Update (Resend)"
+    else:
+        return False, f"Unknown notification type: {notification_type}"
+
+    if getattr(settings, "NOTIFICATION_EMAIL_ASYNC", False):
+        sent, reason = _send_async(incident, recipient_email, subject, message)
+        if sent:
+            return True, reason
+        return _send_sync(incident, recipient_email, subject, message)
+
+    return _send_sync(incident, recipient_email, subject, message)

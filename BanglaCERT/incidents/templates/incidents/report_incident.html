@@ -3,11 +3,188 @@
 {% block title %}Report Incident | BanglaCERT{% endblock %}
 
 {% block content %}
-<h1>Report Incident</h1>
-<p class="muted">Submit incident details for review by administrators.</p>
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Submit Report</button>
-</form>
+<div class="detail-hero" style="margin-bottom:28px;">
+    <span class="eyebrow">Authenticated Report</span>
+    <h1>Report a Cyber Incident</h1>
+    <p class="lede" style="margin-bottom:0;">Submit incident details for review by the security team. Your account will be linked to this report.</p>
+</div>
+
+<div class="section-block">
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div style="background:rgba(248,113,113,0.10); border:1px solid rgba(248,113,113,0.28); border-radius:10px; padding:12px 16px; margin-bottom:16px; color:#F87171; font-size:0.875rem;">
+                {{ form.non_field_errors }}
+            </div>
+        {% endif %}
+
+        <div class="row" style="flex-wrap:wrap; gap:16px; margin-bottom:16px;">
+            <div class="col">
+                <label for="{{ form.title.id_for_label }}">Incident Title</label>
+                {{ form.title }}
+                {% if form.title.errors %}<div style="color:#F87171; font-size:12px; margin-top:5px;">{{ form.title.errors|striptags }}</div>{% endif %}
+            </div>
+            <div class="col">
+                <label for="{{ form.category.id_for_label }}">Category</label>
+                {{ form.category }}
+                {% if form.category.errors %}<div style="color:#F87171; font-size:12px; margin-top:5px;">{{ form.category.errors|striptags }}</div>{% endif %}
+            </div>
+        </div>
+
+        <div style="margin-bottom:16px;">
+            <label for="{{ form.description.id_for_label }}">Description</label>
+            {{ form.description }}
+            {% if form.description.errors %}<div style="color:#F87171; font-size:12px; margin-top:5px;">{{ form.description.errors|striptags }}</div>{% endif %}
+        </div>
+
+        <div style="margin-bottom:16px;">
+            <label for="{{ form.incident_date.id_for_label }}">Incident Date</label>
+            {{ form.incident_date }}
+            {% if form.incident_date.errors %}<div style="color:#F87171; font-size:12px; margin-top:5px;">{{ form.incident_date.errors|striptags }}</div>{% endif %}
+        </div>
+
+        <!-- Evidence Files — Drag & Drop -->
+        <div style="margin-bottom:24px;">
+            <label for="{{ form.evidence_files.id_for_label }}" style="display:block; margin-bottom:8px;">
+                Evidence Files <span style="color:#7A93B4; font-weight:400;">(Optional)</span>
+            </label>
+
+            <!-- Hidden real input -->
+            <div style="display:none;">{{ form.evidence_files }}</div>
+
+            <!-- Drop Zone -->
+            <div id="drop-zone"
+                 style="
+                    border: 2px dashed rgba(56,189,248,0.35);
+                    border-radius: 14px;
+                    padding: 32px 20px;
+                    text-align: center;
+                    background: rgba(11,18,32,0.60);
+                    cursor: pointer;
+                    transition: border-color 0.2s ease, background 0.2s ease;
+                 "
+                 onclick="document.getElementById('{{ form.evidence_files.id_for_label }}').click()">
+
+                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24"
+                     fill="none" stroke="rgba(56,189,248,0.60)" stroke-width="1.5"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     style="margin-bottom:12px; display:block; margin-left:auto; margin-right:auto;">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+
+                <p style="margin:0 0 6px; color:#C8D9EE; font-size:0.95rem; font-weight:600;">
+                    Drag &amp; drop files here
+                </p>
+                <p style="margin:0; color:#7A93B4; font-size:0.82rem;">
+                    or <span style="color:#38BDF8; font-weight:700;">browse to select</span>
+                </p>
+                <p style="margin:8px 0 0; color:#4A6480; font-size:0.75rem; letter-spacing:0.05em;">
+                    PNG · JPG · PDF &nbsp;|&nbsp; Max 5 MB per file
+                </p>
+            </div>
+
+            <!-- File preview list -->
+            <ul id="file-list" style="list-style:none; margin:10px 0 0; padding:0; display:grid; gap:8px;"></ul>
+
+            {% if form.evidence_files.errors %}
+                <div style="color:#F87171; font-size:12px; margin-top:8px;">{{ form.evidence_files.errors|striptags }}</div>
+            {% endif %}
+        </div>
+
+        <div style="display:flex; gap:14px; align-items:center; flex-wrap:wrap;">
+            <button type="submit">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                Submit Report
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+#drop-zone.drag-over {
+    border-color: rgba(56,189,248,0.80);
+    background: rgba(56,189,248,0.08);
+}
+.file-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 14px;
+    border: 1px solid rgba(56,189,248,0.18);
+    border-radius: 10px;
+    background: rgba(17,32,56,0.70);
+    font-size: 0.85rem;
+    color: #C8D9EE;
+    animation: rise-in 0.2s ease both;
+}
+.file-item .file-icon { flex-shrink: 0; }
+.file-item .file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-item .file-size { color: #7A93B4; font-size: 0.75rem; flex-shrink: 0; }
+.file-item .file-remove {
+    background: none; border: none; color: #F87171; cursor: pointer; font-size: 18px;
+    line-height: 1; padding: 0 2px; transition: color 0.15s; min-height: unset; box-shadow: none;
+}
+.file-item .file-remove:hover { color: #EF4444; transform: none; }
+</style>
+
+<script>
+(function() {
+    const zone  = document.getElementById('drop-zone');
+    const list  = document.getElementById('file-list');
+    const input = document.getElementById('{{ form.evidence_files.id_for_label }}');
+    if (!zone || !list || !input) return;
+
+    let chosen = new DataTransfer();
+
+    function fmtSize(b) {
+        if (b < 1024) return b + ' B';
+        if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+        return (b / 1048576).toFixed(1) + ' MB';
+    }
+    function fileIcon(name) {
+        const ext = name.split('.').pop().toLowerCase();
+        if (['jpg','jpeg','png','gif','webp'].includes(ext)) return '🖼';
+        if (ext === 'pdf') return '📄';
+        return '📎';
+    }
+    function renderList() {
+        list.innerHTML = '';
+        Array.from(chosen.files).forEach((file, idx) => {
+            const li = document.createElement('li');
+            li.className = 'file-item';
+            li.innerHTML = `
+                <span class="file-icon">${fileIcon(file.name)}</span>
+                <span class="file-name" title="${file.name}">${file.name}</span>
+                <span class="file-size">${fmtSize(file.size)}</span>
+                <button type="button" class="file-remove" title="Remove" data-idx="${idx}">×</button>
+            `;
+            list.appendChild(li);
+        });
+        input.files = chosen.files;
+    }
+    function addFiles(files) {
+        Array.from(files).forEach(f => chosen.items.add(f));
+        renderList();
+    }
+    input.addEventListener('change', () => addFiles(input.files));
+    list.addEventListener('click', e => {
+        const btn = e.target.closest('.file-remove');
+        if (!btn) return;
+        const idx = parseInt(btn.dataset.idx, 10);
+        const next = new DataTransfer();
+        Array.from(chosen.files).forEach((f, i) => { if (i !== idx) next.items.add(f); });
+        chosen = next;
+        renderList();
+    });
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    ['dragleave','dragend'].forEach(ev => zone.addEventListener(ev, () => zone.classList.remove('drag-over')));
+    zone.addEventListener('drop', e => {
+        e.preventDefault();
+        zone.classList.remove('drag-over');
+        addFiles(e.dataTransfer.files);
+    });
+})();
+</script>
 {% endblock %}

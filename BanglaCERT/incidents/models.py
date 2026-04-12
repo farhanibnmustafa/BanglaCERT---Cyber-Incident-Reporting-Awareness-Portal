@@ -74,6 +74,15 @@ class Incident(models.Model):
             return "Anonymous"
         return self.created_by.username
 
+    @property
+    def recipient_email(self) -> str:
+        """Returns the best email for notifications. Avoids NoneType attribute errors in templates."""
+        if self.reporter_email:
+            return self.reporter_email
+        if self.created_by and self.created_by.email:
+            return self.created_by.email
+        return ""
+
     def ensure_public_tracking_credentials(self):
         updated_fields = []
         if not self.public_tracking_id:

@@ -12,4 +12,6 @@ urlpatterns = [
     path("incidents/<int:incident_id>/category/", staff_views.update_incident_category, name="incident_category"),
     path("incidents/<int:incident_id>/status/", staff_views.update_incident_status, name="incident_status"),
     path("incidents/<int:incident_id>/comments/", staff_views.add_incident_comment, name="incident_comment"),
+    path("incidents/<int:incident_id>/inline-update/", staff_views.inline_update_incident, name="incident_inline_update"),
+    path("incidents/<int:incident_id>/resend-email/", staff_views.resend_incident_email, name="incident_resend_email"),
 ]

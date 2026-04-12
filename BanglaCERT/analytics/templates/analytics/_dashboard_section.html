@@ -53,12 +53,107 @@
         <h2>Incident Frequency Graph</h2>
         {% if frequency_points %}
             <div class="trend-shell">
-                <svg viewBox="0 0 300 150" width="100%" height="180" role="img" aria-label="Incident frequency trend line">
-                    <line x1="20" y1="130" x2="280" y2="130" stroke="#cbd5e1" stroke-width="1"></line>
-                    <line x1="20" y1="20" x2="20" y2="130" stroke="#cbd5e1" stroke-width="1"></line>
-                    <polyline fill="none" stroke="#2563eb" stroke-width="3" points="{{ frequency_line_points }}"></polyline>
+                <svg viewBox="-30 -5 340 160" width="100%" height="200" role="img" aria-label="Incident frequency trend line" style="overflow:visible; display:block;">
+                    <defs>
+                        <!-- Subtle grid line style -->
+                        <style>
+                            .axis-line { stroke: rgba(56,189,248,0.18); stroke-width: 1; }
+                            .grid-line  { stroke: rgba(56,189,248,0.10); stroke-width: 1; stroke-dasharray: 3,4; }
+                            .axis-label { fill: rgba(120,160,210,0.65); font-size: 8px; font-family: Outfit,Inter,sans-serif; }
+                        </style>
+                        <!-- Blue glow filter -->
+                        <filter id="blue-glow" x="-30%" y="-30%" width="160%" height="160%">
+                            <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur"/>
+                            <feColorMatrix in="blur" type="matrix"
+                                values="0 0 0 0 0
+                                        0 0.55 0 0 0.78
+                                        0 0 0 0 1
+                                        0 0 0 1.8 0" result="blue-blur"/>
+                            <feMerge>
+                                <feMergeNode in="blue-blur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                        <!-- Soft dot glow -->
+                        <filter id="dot-glow" x="-80%" y="-80%" width="260%" height="260%">
+                            <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="blur"/>
+                            <feColorMatrix in="blur" type="matrix"
+                                values="0.3 0 0 0 0.3
+                                        0.3 0 0 0 0.3
+                                        0.3 0 0 0 1
+                                        0 0 0 2 0" result="colored"/>
+                            <feMerge>
+                                <feMergeNode in="colored"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                        <!-- Deep blue area gradient -->
+                        <linearGradient id="area-grad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#1D6FD9" stop-opacity="0.65"/>
+                            <stop offset="55%" stop-color="#0D3A8A" stop-opacity="0.30"/>
+                            <stop offset="100%" stop-color="#050D20" stop-opacity="0"/>
+                        </linearGradient>
+                        <!-- Line gradient: bright in middle -->
+                        <linearGradient id="line-grad" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.70"/>
+                            <stop offset="45%" stop-color="#60CAFF" stop-opacity="1"/>
+                            <stop offset="100%" stop-color="#38BDF8" stop-opacity="0.80"/>
+                        </linearGradient>
+                    </defs>
+
+                    
+                    <!-- === AXES & GRID === -->
+                    <!-- Y-axis vertical line -->
+                    <line x1="20" y1="18" x2="20" y2="130" class="axis-line"/>
+                    <!-- X-axis horizontal line -->
+                    <line x1="20" y1="130" x2="284" y2="130" class="axis-line"/>
+
+                    <!-- Horizontal grid lines + Y labels (4 intervals) -->
+                    <!-- 100% line -->
+                    <line x1="20" y1="40" x2="284" y2="40" class="grid-line"/>
+                    <text x="16" y="43" text-anchor="end" class="axis-label">100%</text>
+                    <!-- 75% line -->
+                    <line x1="20" y1="62" x2="284" y2="62" class="grid-line"/>
+                    <text x="16" y="65" text-anchor="end" class="axis-label">75%</text>
+                    <!-- 50% line -->
+                    <line x1="20" y1="85" x2="284" y2="85" class="grid-line"/>
+                    <text x="16" y="88" text-anchor="end" class="axis-label">50%</text>
+                    <!-- 25% line -->
+                    <line x1="20" y1="107" x2="284" y2="107" class="grid-line"/>
+                    <text x="16" y="110" text-anchor="end" class="axis-label">25%</text>
+                    <!-- 0% label -->
+                    <text x="16" y="132" text-anchor="end" class="axis-label">0%</text>
+
+                    <!-- X-axis tick marks at each data point -->
                     {% for point in frequency_points %}
-                        <circle cx="{{ point.x }}" cy="{{ point.y }}" r="4" fill="#0f172a"></circle>
+                        <line x1="{{ point.x }}" y1="130" x2="{{ point.x }}" y2="135" class="axis-line"/>
+                    {% endfor %}
+                    <!-- === END AXES === -->
+
+                    {% if frequency_smooth_path %}
+                        <!-- Filled area under curve -->
+                        <path d="{{ frequency_smooth_area }}" fill="url(#area-grad)"/>
+
+                        <!-- Outer glow halo line -->
+                        <path d="{{ frequency_smooth_path }}" fill="none" stroke="#38BDF8" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" opacity="0.18"/>
+
+                        <!-- Main bright smooth line -->
+                        <path d="{{ frequency_smooth_path }}" fill="none" stroke="url(#line-grad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" filter="url(#blue-glow)"/>
+                    {% else %}
+                        <!-- Fallback straight line -->
+                        <polygon fill="url(#area-grad)" points="20,130 {{ frequency_line_points }} 280,130"/>
+                        <polyline fill="none" stroke="#38BDF8" stroke-width="8" stroke-linecap="round" opacity="0.18" points="{{ frequency_line_points }}"/>
+                        <polyline fill="none" stroke="url(#line-grad)" stroke-width="3" stroke-linecap="round" filter="url(#blue-glow)" points="{{ frequency_line_points }}"/>
+                    {% endif %}
+
+                    <!-- Data point markers: white glow dot -->
+                    {% for point in frequency_points %}
+                        <!-- Outer soft aura -->
+                        <circle cx="{{ point.x }}" cy="{{ point.y }}" r="12" fill="none" stroke="rgba(148,196,255,0.20)" stroke-width="1"/>
+                        <!-- Mid ring -->
+                        <circle cx="{{ point.x }}" cy="{{ point.y }}" r="7" fill="rgba(30,60,120,0.80)" stroke="rgba(148,196,255,0.50)" stroke-width="1.2"/>
+                        <!-- Bright white dot -->
+                        <circle cx="{{ point.x }}" cy="{{ point.y }}" r="3.5" fill="#ffffff" filter="url(#dot-glow)"/>
                     {% endfor %}
                 </svg>
 
@@ -68,14 +163,14 @@
                             <div class="trend-bar-wrap">
                                 <div class="trend-bar" style="height: {{ point.height }}px;"></div>
                             </div>
-                            <strong style="display: block;">{{ point.count }}</strong>
-                            <span class="muted" style="font-size: 12px;">{{ point.label }}</span>
+                            <strong style="display: block; color: #C8D9EE; font-size: 0.9rem;">{{ point.count }}</strong>
+                            <span class="muted" style="font-size: 11px; font-family: 'Outfit', sans-serif; letter-spacing: 0.04em;">{{ point.label }}</span>
                         </div>
                     {% endfor %}
                 </div>
             </div>
         {% else %}
-            <p>No incident trend data is available yet.</p>
+            <p class="muted" style="font-size:0.9rem;">No incident trend data is available yet.</p>
         {% endif %}
     </section>
 </section>

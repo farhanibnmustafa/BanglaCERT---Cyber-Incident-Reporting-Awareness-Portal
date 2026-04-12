@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.views import redirect_to_login
 from django.db.models import Count, Q
-from django.http import HttpResponseNotAllowed
+from django.http import HttpResponseNotAllowed, JsonResponse
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -23,6 +23,7 @@ from .staff_tools import (
     log_status_change,
     notify_status_change,
 )
+from notifications.services import resend_incident_notification
 
 
 User = get_user_model()
@@ -304,3 +305,96 @@ def add_incident_comment(request, incident_id):
     )
     messages.success(request, "Admin note added.")
     return redirect("admin:incident_detail", incident_id=incident.id)
+
+
+@staff_required
+def inline_update_incident(request, incident_id):
+    """JSON endpoint for quick status/category updates from the dashboard table."""
+    if request.method != "POST":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    import json
+    try:
+        payload = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    field = payload.get("field")  # "status" or "category"
+    value = payload.get("value", "").strip()
+
+    if field not in ("status", "category") or not value:
+        return JsonResponse({"error": "Invalid field or value"}, status=400)
+
+    incident = get_object_or_404(Incident, id=incident_id)
+
+    if field == "status":
+        valid_values = dict(Incident.STATUS_CHOICES)
+        if value not in valid_values:
+            return JsonResponse({"error": "Invalid status value"}, status=400)
+        previous = incident.status
+        if previous == value:
+            return JsonResponse({"ok": True, "display": incident.get_status_display(), "unchanged": True})
+        incident.status = value
+        incident.save(update_fields=["status", "updated_at"])
+        log_status_change(request.user, incident, previous, value)
+        notify_status_change(incident, previous, value)
+        return JsonResponse({"ok": True, "display": incident.get_status_display()})
+
+    elif field == "category":
+        valid_values = dict(Incident.CATEGORY_CHOICES)
+        if value not in valid_values:
+            return JsonResponse({"error": "Invalid category value"}, status=400)
+        previous = incident.category
+        if previous == value:
+            return JsonResponse({"ok": True, "display": incident.get_category_display(), "unchanged": True})
+        incident.category = value
+        incident.save(update_fields=["category", "updated_at"])
+        log_staff_action(
+            request.user,
+            AuditLog.ACTION_UPDATE,
+            incident,
+            build_audit_message(
+                request.user,
+                f"Category changed from {_category_label(previous)} to {_category_label(value)}",
+            ),
+        )
+        return JsonResponse({"ok": True, "display": incident.get_category_display()})
+
+
+@staff_required
+def resend_incident_email(request, incident_id):
+    """Resend a submission or status notification email to the reporter."""
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    incident = get_object_or_404(Incident, id=incident_id)
+    notification_type = request.POST.get("notification_type", "").strip()
+
+    if notification_type not in ("submission", "status"):
+        messages.error(request, "Invalid notification type.")
+        return redirect("admin:incident_detail", incident_id=incident.id)
+
+    recipient = incident.reporter_email or (
+        incident.created_by.email if incident.created_by else ""
+    )
+    if not recipient:
+        messages.error(request, "No email address available for this reporter.")
+        return redirect("admin:incident_detail", incident_id=incident.id)
+
+    sent, reason = resend_incident_notification(incident, notification_type)
+
+    if sent:
+        log_staff_action(
+            request.user,
+            AuditLog.ACTION_UPDATE,
+            incident,
+            build_audit_message(
+                request.user, f"Resent {notification_type} email to {recipient}"
+            ),
+        )
+        messages.success(request, f"Email notification ({notification_type}) resent to {recipient}.")
+    else:
+        messages.error(request, f"Failed to send email notification: {reason}")
+
+    return redirect("admin:incident_detail", incident_id=incident.id)
+

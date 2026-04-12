@@ -11,10 +11,12 @@
     <header class="auth-hero">
         <div class="auth-brand">
             <div class="hero-brand">
-                <div class="brand-row">
-                    <img class="brand-logo" src="{% static 'img/logo.png' %}" alt="BanglaCERT">
-                </div>
-                <div class="brand-subtitle">Cyber Incident Reporting &amp; Awareness Portal</div>
+                <a href="{% url 'incidents:home' %}" style="text-decoration:none; color:inherit;">
+                    <div class="brand-row">
+                        <img class="brand-logo" src="{% static 'img/logo.png' %}" alt="BanglaCERT">
+                    </div>
+                    <div class="brand-subtitle">Cyber Incident Reporting &amp; Awareness Portal</div>
+                </a>
             </div>
         </div>
     </header>

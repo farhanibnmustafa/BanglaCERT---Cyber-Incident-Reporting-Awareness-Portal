@@ -1,220 +1,272 @@
-/* Modular CSS for the React Navbar Component */
+/* =============================================
+   NAVBAR — DOTDNA Midnight Navy Cybersecurity
+============================================= */
+
+/* Import Outfit sans-serif for brand */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&display=swap');
 
 .react-site-nav {
   position: sticky;
   top: 0;
-  z-index: 50;
+  z-index: 100;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 24px;
-  margin: 18px auto 0;
-  width: min(1180px, calc(100% - 28px));
-  border: 1px solid rgba(103, 152, 201, 0.22);
-  border-radius: 22px;
-  background: rgba(6, 18, 40, 0.85);
-  backdrop-filter: blur(18px);
-  box-shadow: 0 18px 48px rgba(8, 18, 39, 0.24);
-  font-family: inherit;
+  padding: 12px 22px;
+  margin: 16px auto 0;
+  width: min(1200px, calc(100% - 28px));
+  border: 1px solid rgba(56,189,248,0.18);
+  border-radius: 24px;
+  background: rgba(8,14,28,0.88);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow:
+    0 8px 40px rgba(4,8,20,0.55),
+    inset 0 1px 0 rgba(56,189,248,0.08);
+  font-family: 'Inter', system-ui, sans-serif;
+  transition: border-color 0.3s ease;
 }
 
+.react-site-nav:hover {
+  border-color: rgba(0,232,122,0.22);
+}
+
+/* ===== Brand ===== */
 .nav-brand-link {
   display: flex;
   align-items: center;
-  padding-right: 20px;
+  gap: 10px;
+  padding-right: 18px;
+  border-right: 1px solid rgba(56,189,248,0.12);
   text-decoration: none;
   transition: opacity 0.2s ease;
-  z-index: 51;
+  flex-shrink: 0;
 }
-
-.nav-brand-link:hover {
-  opacity: 0.8;
-}
+.nav-brand-link:hover { opacity: 0.85; }
 
 .nav-logo {
-  height: clamp(34px, 4vw, 44px);
+  height: clamp(32px, 3.5vw, 42px);
   width: auto;
   object-fit: contain;
+  filter: drop-shadow(0 0 8px rgba(0,232,122,0.30));
 }
 
 .nav-brand-text {
-  color: #f7fcff;
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-weight: 800;
+  font-size: clamp(0.95rem, 1.2vw, 1.15rem);
   letter-spacing: 0.05em;
-  font-weight: 700;
-  font-size: 1.15rem;
-  margin-left: 12px;
+  background: linear-gradient(135deg, #D6E8FF 0%, #38BDF8 50%, #00E87A 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-/* Mobile Toggle */
+/* ===== Mobile Toggle ===== */
 .mobile-menu-btn {
   display: none;
   background: transparent;
-  border: none;
-  color: #eaf6ff;
+  border: 1px solid rgba(0,232,122,0.28);
+  border-radius: 10px;
+  color: #00E87A;
   cursor: pointer;
-  padding: 4px;
-  z-index: 51;
+  padding: 8px;
+  z-index: 101;
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
-
 .mobile-menu-btn:hover {
-  color: #8ff3ff;
+  background: rgba(0,232,122,0.10);
+  border-color: rgba(0,232,122,0.50);
 }
 
-/* Links Container */
+/* ===== Links Container ===== */
 .nav-links-container {
   display: flex;
   flex: 1;
   justify-content: space-between;
   align-items: center;
+  padding-left: 16px;
 }
 
-.nav-primary, .nav-auth {
+.nav-primary,
+.nav-auth {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 4px;
 }
 
+/* ===== Nav Links ===== */
 .nav-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: #eaf6ff;
+  color: rgba(200,217,238,0.80);
   text-decoration: none;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  font-size: 13px;
-  padding: 10px 16px;
+  font-size: 12px;
+  padding: 8px 14px;
   border-radius: 999px;
+  border: 1px solid transparent;
   transition: all 0.2s ease;
+  font-family: inherit;
+  white-space: nowrap;
 }
 
+.nav-link svg { flex-shrink: 0; opacity: 0.75; }
+
 .nav-link:hover {
-  background: rgba(38, 212, 255, 0.14);
-  color: #8ff3ff;
+  background: rgba(0,232,122,0.10);
+  border-color: rgba(0,232,122,0.25);
+  color: #00E87A;
+}
+.nav-link:hover svg { opacity: 1; }
+
+/* Highlight — Report Incident CTA */
+.nav-link.highlight {
+  background: linear-gradient(135deg, #00C76A 0%, #00A356 65%, #007A40 100%);
+  border-color: rgba(0,200,100,0.55);
+  color: #fff;
+  box-shadow: 0 4px 18px rgba(0,232,122,0.28);
+}
+.nav-link.highlight svg { opacity: 1; }
+.nav-link.highlight:hover {
+  background: linear-gradient(135deg, #00E87A 0%, #00C76A 65%, #00A356 100%);
+  border-color: rgba(0,200,100,0.75);
+  color: #fff;
+  box-shadow: 0 6px 24px rgba(0,232,122,0.45);
   transform: translateY(-1px);
 }
 
-.nav-link.highlight {
-  background: linear-gradient(135deg, #143f86 0%, #0d3270 58%, #08244f 100%);
-  border: 1px solid rgba(12, 49, 107, 0.95);
-  color: #f4f8ff;
-  box-shadow: 0 10px 20px rgba(8, 31, 74, 0.24);
-}
-
-.nav-link.highlight:hover {
-  background: linear-gradient(135deg, #1a4d9f 0%, #12408c 58%, #0b2f69 100%);
-  color: #ffffff;
-  box-shadow: 0 14px 24px rgba(8, 31, 74, 0.3);
-}
-
+/* ===== User Menu ===== */
 .nav-user-menu {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding-left: 16px;
-  border-left: 1px solid rgba(143, 243, 255, 0.18);
+  gap: 14px;
+  padding-left: 14px;
+  border-left: 1px solid rgba(56,189,248,0.12);
 }
 
 .user-greeting {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  color: #d1efff;
-  font-size: 14px;
+  gap: 6px;
+  color: rgba(200,217,238,0.70);
+  font-size: 13px;
 }
+.user-greeting strong { color: #38BDF8; }
 
-.logout-form {
-  margin: 0;
-}
+.logout-form { margin: 0; }
 
 .logout-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(220, 38, 38, 0.1);
-  border: 1px solid rgba(220, 38, 38, 0.3);
-  color: #ffd1d1;
-  font-weight: 600;
-  padding: 8px 14px;
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.25);
   border-radius: 999px;
-  cursor: pointer;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  color: #FCA5A5;
   font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 7px 14px;
+  cursor: pointer;
+  font-family: inherit;
   transition: all 0.2s ease;
+  box-shadow: none;
+  min-height: unset;
 }
-
 .logout-btn:hover {
-  background: rgba(220, 38, 38, 0.2);
-  color: #ffeded;
+  background: rgba(239,68,68,0.16);
+  border-color: rgba(239,68,68,0.45);
+  color: #FEE2E2;
   transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(239,68,68,0.15);
 }
 
 .auth-separator {
-  color: rgba(143, 243, 255, 0.3);
+  color: rgba(56,189,248,0.20);
+  padding: 0 2px;
 }
 
-/* Responsive Mobile Styles */
+/* ===== Responsive Mobile ===== */
 @media (max-width: 860px) {
-  .mobile-menu-btn {
-    display: flex;
-  }
-  
+  .mobile-menu-btn { display: flex; }
+
+  .react-site-nav { position: relative; /* so dropdown is relative */ }
+
   .nav-links-container {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 10px);
     left: 0;
     width: 100%;
     flex-direction: column;
-    align-items: flex-start;
-    background: rgba(6, 18, 40, 0.95);
-    backdrop-filter: blur(24px);
-    border: 1px solid rgba(103, 152, 201, 0.22);
+    align-items: stretch;
+    background: rgba(8,14,28,0.96);
+    border: 1px solid rgba(0,232,122,0.20);
     border-radius: 18px;
-    padding: 20px;
-    margin-top: 10px;
-    box-shadow: 0 24px 60px rgba(4, 12, 28, 0.4);
+    padding: 18px;
+    box-shadow: 0 24px 60px rgba(4,8,20,0.65);
     opacity: 0;
     pointer-events: none;
-    transform: translateY(-10px);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateY(-8px);
+    transition: all 0.28s cubic-bezier(0.16,1,0.3,1);
+    backdrop-filter: blur(24px);
+    padding-left: 0;
   }
-  
   .nav-links-container.open {
     opacity: 1;
     pointer-events: auto;
     transform: translateY(0);
   }
-  
-  .nav-primary, .nav-auth {
+
+  .nav-primary,
+  .nav-auth {
     flex-direction: column;
     width: 100%;
-    align-items: flex-start;
-    gap: 8px;
+    align-items: stretch;
+    gap: 6px;
   }
-  
+
   .nav-link {
     width: 100%;
     justify-content: flex-start;
-    padding: 12px 16px;
+    padding: 11px 16px;
+    border-radius: 12px;
+    font-size: 13px;
   }
-  
+
   .nav-auth {
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px solid rgba(143, 243, 255, 0.18);
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(56,189,248,0.10);
+    border-left: none;
   }
-  
+
   .nav-user-menu {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     padding-left: 0;
     border-left: none;
     width: 100%;
+    gap: 10px;
   }
-  
-  .auth-separator {
-    display: none;
+
+  .logout-btn { width: 100%; justify-content: center; padding: 11px 16px; font-size: 13px; }
+  .auth-separator { display: none; }
+}
+
+/* 4K / Projector */
+@media (min-width: 1920px) {
+  .react-site-nav {
+    padding: 16px 32px;
+    border-radius: 28px;
+    margin: 20px auto 0;
   }
+  .nav-logo { height: 52px; }
+  .nav-brand-text { font-size: 1.35rem; }
+  .nav-link { font-size: 14px; padding: 10px 18px; }
+  .logout-btn { font-size: 14px; padding: 10px 20px; }
 }
