@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import staff_views
+from incidents import staff_views
 
 app_name = "admin"
 

@@ -4,6 +4,12 @@
 {% block title %}Staff Accounts Management | BanglaCERT{% endblock %}
 
 {% block content %}
+<style>
+    /* Status button styles to avoid IDE errors with inline logic */
+    .btn-toggle-status { width: 85px; text-align: center; }
+    .btn-status-active { background: rgba(239, 68, 68, 0.15); border-color: #EF4444; color: #EF4444; }
+    .btn-status-inactive { background: rgba(0, 232, 122, 0.15); border-color: #00E87A; color: #00E87A; }
+</style>
 <header class="detail-hero">
     <div class="eyebrow">Administration</div>
     <h1>Staff Accounts</h1>
@@ -141,15 +147,22 @@
                             <td style="text-align: right;">
                                 <div class="action-row" style="justify-content: flex-end; gap: 6px;">
                                     <!-- Edit Button -->
-                                    <button class="nav-link-button light-button" style="padding: 4px 12px; height: 32px; min-height: 32px; font-size: 11px;"
-                                            onclick="openEditModal('{{ staff_user.id }}', '{{ staff_user.username }}', '{{ staff_user.email }}', '{{ staff_user.first_name }}', '{{ staff_user.last_name }}', {{ staff_user.is_active|yesno:'true,false' }})">
+                                    <button class="nav-link-button light-button edit-staff-trigger" 
+                                            style="padding: 4px 12px; height: 32px; min-height: 32px; font-size: 11px;"
+                                            data-id="{{ staff_user.id }}"
+                                            data-username="{{ staff_user.username }}"
+                                            data-email="{{ staff_user.email }}"
+                                            data-first-name="{{ staff_user.first_name }}"
+                                            data-last-name="{{ staff_user.last_name }}"
+                                            data-is-active="{{ staff_user.is_active|yesno:'true,false' }}">
                                         Edit
                                     </button>
 
                                     <!-- Toggle Active -->
                                     <form method="post" action="{% url 'admin:toggle_staff_active' staff_user.id %}" style="margin: 0;" onsubmit="return confirm('Change account status for {{ staff_user.username }}?')">
                                         {% csrf_token %}
-                                        <button type="submit" class="nav-link-button" style="padding: 4px 12px; height: 32px; min-height: 32px; font-size: 11px; background: {% if staff_user.is_active %}rgba(239, 68, 68, 0.15){% else %}rgba(0, 232, 122, 0.15){% endif %}; border-color: {% if staff_user.is_active %}#EF4444{% else %}#00E87A{% endif %}; color: {% if staff_user.is_active %}#EF4444{% else %}#00E87A{% endif %};">
+                                        <button type="submit" class="nav-link-button btn-toggle-status {% if staff_user.is_active %}btn-status-active{% else %}btn-status-inactive{% endif %}" 
+                                                style="padding: 4px 12px; height: 32px; min-height: 32px; font-size: 11px;">
                                             {% if staff_user.is_active %}Deactivate{% else %}Activate{% endif %}
                                         </button>
                                     </form>
@@ -239,6 +252,21 @@
         document.getElementById('editModal').style.display = 'none';
         document.body.style.overflow = 'auto';
     }
+
+    // Modern event listener for Edit buttons
+    document.querySelectorAll('.edit-staff-trigger').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const data = this.dataset;
+            openEditModal(
+                data.id, 
+                data.username, 
+                data.email, 
+                data.firstName, 
+                data.lastName, 
+                data.isActive === 'true'
+            );
+        });
+    });
 
     // Close on escape key
     document.addEventListener('keydown', (e) => {

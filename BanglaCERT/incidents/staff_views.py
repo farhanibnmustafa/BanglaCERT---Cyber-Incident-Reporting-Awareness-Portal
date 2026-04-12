@@ -13,9 +13,9 @@ from accounts.forms import StaffPromotionForm, StaffUserCreationForm, UserRegist
 from analytics.services import build_analytics_dashboard
 from auditlog.models import AuditLog
 
-from .forms import IncidentStaffCategoryForm, IncidentStaffCommentForm, IncidentStaffFilterForm, IncidentStaffStatusForm
-from .models import Incident
-from .staff_tools import (
+from incidents.forms import IncidentStaffCategoryForm, IncidentStaffCommentForm, IncidentStaffFilterForm, IncidentStaffStatusForm
+from incidents.models import Incident
+from incidents.staff_tools import (
     build_audit_message,
     can_manage_staff_users,
     has_staff_users,
