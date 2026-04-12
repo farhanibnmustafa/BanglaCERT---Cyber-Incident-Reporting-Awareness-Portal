@@ -160,7 +160,7 @@ EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "true").lower() == "true"
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "").strip()
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "").replace(" ", "").strip()
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "no-reply@banglacert.local")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", f"BanglaCERT Security <{EMAIL_HOST_USER or 'no-reply@banglacert.local'}>")
 
 # Set true to queue status emails in a background thread.
 NOTIFICATION_EMAIL_ASYNC = os.getenv("NOTIFICATION_EMAIL_ASYNC", "false").lower() == "true"
