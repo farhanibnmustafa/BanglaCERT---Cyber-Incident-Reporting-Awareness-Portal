@@ -11,10 +11,12 @@
     <header class="auth-hero">
         <div class="auth-brand">
             <div class="hero-brand">
-                <div class="brand-row">
-                    <img class="brand-logo" src="{% static 'img/logo.png' %}" alt="BanglaCERT">
-                </div>
-                <div class="brand-subtitle">Cyber Incident Reporting &amp; Awareness Portal</div>
+                <a href="{% url 'incidents:home' %}" style="text-decoration:none; color:inherit;">
+                    <div class="brand-row">
+                        <img class="brand-logo" src="{% static 'img/logo.png' %}" alt="BanglaCERT">
+                    </div>
+                    <div class="brand-subtitle">Cyber Incident Reporting &amp; Awareness Portal</div>
+                </a>
             </div>
         </div>
     </header>
@@ -68,7 +70,11 @@
                 </form>
 
                 <div class="auth-actions auth-actions-right">
-                    <a class="aux-link" href="#">Forgot Password?</a>
+                    {% if staff_login %}
+                        <span class="auth-note">Forgot password? Contact a superuser for recovery.</span>
+                    {% else %}
+                        <a class="aux-link" href="{% url 'accounts:password_reset' %}">Forgot Password?</a>
+                    {% endif %}
                 </div>
 
                 {% if staff_login %}

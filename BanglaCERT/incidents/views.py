@@ -16,6 +16,7 @@ from .forms import (
     IncidentReportForm,
 )
 from .models import Incident, IncidentEvidence
+from notifications.services import notify_incident_submission
 
 
 def get_incident_for_user(user, incident_id):
@@ -85,6 +86,7 @@ def report_incident(request):
                 incident.reporter_email = request.user.email
             incident.save()
             _save_evidence_files(incident, request.user, form.cleaned_data.get("evidence_files", []))
+            notify_incident_submission(incident)
             messages.success(request, "Incident submitted successfully.")
             return redirect("incidents:detail", incident_id=incident.id)
     else:
@@ -103,6 +105,7 @@ def public_report_incident(request):
             _issue_public_tracking_credentials(incident)
             _save_evidence_files(incident, None, form.cleaned_data.get("evidence_files", []))
             _store_public_report_tracking(request, incident)
+            notify_incident_submission(incident)
             messages.success(request, "Incident submitted successfully.")
             return redirect("incidents:public_report_success")
     else:

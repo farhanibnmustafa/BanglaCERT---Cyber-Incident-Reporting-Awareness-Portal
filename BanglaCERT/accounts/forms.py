@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, PasswordResetForm
 
 
 User = get_user_model()
@@ -158,3 +158,25 @@ class EmailLoginForm(forms.Form):
 
     def get_user(self):
         return self.user_cache
+
+class AdminExcludedPasswordResetForm(PasswordResetForm):
+    def get_users(self, email):
+        """
+        Exclude staff (admin) users from the password reset flow.
+        """
+        active_users = super().get_users(email)
+        return [u for u in active_users if not u.is_staff]
+
+class ManageStaffUserForm(forms.ModelForm):
+    first_name = forms.CharField(required=False)
+    last_name = forms.CharField(required=False)
+
+    class Meta:
+        model = User
+        fields = ("username", "email", "first_name", "last_name", "is_active")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["email"].required = True
+        for field in self.fields.values():
+            field.widget.attrs.update({"class": "form-control"})

@@ -4,36 +4,55 @@
 {% block title %}My Reports | BanglaCERT{% endblock %}
 
 {% block content %}
-<section class="section-block">
-<span class="eyebrow">Reporter Workspace</span>
-<h1>My Incident Reports</h1>
-<p class="lede">Track every incident you submitted, monitor status changes, and open any report for more detail.</p>
-<p><a class="cta-link light-button" href="{% url 'incidents:report' %}">Create New Report</a></p>
-{% if incidents %}
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Title</th>
-                <th>Category</th>
-                <th>Status</th>
-                <th>Submitted</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for incident in incidents %}
-                <tr>
-                    <td>{{ incident.id }}</td>
-                    <td><a href="{% url 'incidents:detail' incident.id %}">{{ incident.title }}</a></td>
-                    <td>{{ incident.get_category_display }}</td>
-                    <td><span class="tag">{{ incident.get_status_display }}</span></td>
-                    <td>{{ incident.created_at|localtime|date:"Y-m-d H:i" }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-{% else %}
-    <p>No incident reports yet.</p>
-{% endif %}
-</section>
+<div class="section-block">
+    <span class="eyebrow">Reporter Workspace</span>
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom:8px;">
+        <div>
+            <h1>My Incident Reports</h1>
+            <p class="lede" style="margin-bottom:0;">Track every incident you submitted, monitor status changes, and open any report for more detail.</p>
+        </div>
+        <div style="padding-top:8px;">
+            <a class="cta-link" href="{% url 'incidents:report' %}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                New Report
+            </a>
+        </div>
+    </div>
+
+    {% if incidents %}
+        <div style="overflow-x:auto; margin-top:8px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#ID</th>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th>Submitted</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for incident in incidents %}
+                        <tr>
+                            <td class="mono" style="color:#7A93B4; font-size:0.8rem;">#{{ incident.id }}</td>
+                            <td>
+                                <a href="{% url 'incidents:detail' incident.id %}" style="color:#38BDF8; font-weight:600; text-decoration:none;" onmouseover="this.style.color='#00E87A'" onmouseout="this.style.color='#38BDF8'">
+                                    {{ incident.title }}
+                                </a>
+                            </td>
+                            <td style="color:#A8BDD6; font-size:0.875rem;">{{ incident.get_category_display }}</td>
+                            <td><span class="tag">{{ incident.get_status_display }}</span></td>
+                            <td style="color:#7A93B4; font-family:'JetBrains Mono',monospace; font-size:0.8rem; white-space:nowrap;">{{ incident.created_at|localtime|date:"Y-m-d H:i" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div style="text-align:center; padding:40px 20px;">
+            <p style="color:#7A93B4; font-family:'JetBrains Mono',monospace; font-size:0.9rem; margin-bottom:20px;">— No incident reports yet —</p>
+            <a href="{% url 'incidents:report' %}" class="cta-link">Submit Your First Report</a>
+        </div>
+    {% endif %}
+</div>
 {% endblock %}

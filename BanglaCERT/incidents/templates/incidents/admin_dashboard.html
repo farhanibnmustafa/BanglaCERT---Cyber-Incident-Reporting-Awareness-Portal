@@ -4,122 +4,39 @@
 {% block title %}Admin Dashboard | BanglaCERT{% endblock %}
 
 {% block content %}
-<h1>Incident Admin Dashboard</h1>
-<p class="muted">Review submitted incidents, filter the queue, and record staff decisions.</p>
-
-{% if can_manage_staff_users %}
-<div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px;">
-        <a
-            href="{% url 'admin:staff_accounts' %}"
-            style="
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                padding: 10px 16px;
-                border-radius: 999px;
-                border: 1px solid rgba(8, 34, 82, 0.92);
-                background: linear-gradient(135deg, #143f86 0%, #0d3270 55%, #08244f 100%);
-                color: #f4f8ff;
-                font-weight: 800;
-                letter-spacing: 0.04em;
-                text-decoration: none;
-                box-shadow: 0 12px 24px rgba(8, 31, 74, 0.24);
-            "
-        >
+<div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+    <div>
+        <span class="eyebrow">Operations Center</span>
+        <h1>Incident Admin Dashboard</h1>
+        <p class="lede" style="margin-bottom:0;">Review submitted incidents, filter the queue, and record staff decisions.</p>
+    </div>
+    {% if can_manage_staff_users %}
+    <div style="padding-top:8px;">
+        <a href="{% url 'admin:staff_accounts' %}" class="cta-link">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             Staff Accounts
         </a>
-</div>
-{% endif %}
-
-<div style="margin: 22px 0 26px 0;">
-    <p class="muted" style="margin: 0 0 12px 0; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700;">Status Snapshot</p>
+    </div>
+    {% endif %}
 </div>
 
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin: 0 0 28px 0;">
+<!-- Status Snapshot -->
+<p class="muted" style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; font-weight:700; margin-bottom:14px;">Status Snapshot</p>
+<div class="status-snapshot-grid">
     {% for item in status_summary %}
-        <div
-            style="
-                border-radius: 20px;
-                padding: 18px 18px 16px 18px;
-                border: 1px solid
-                {% if item.value == 'PENDING' %}rgba(245, 158, 11, 0.38)
-                {% elif item.value == 'UNDER_REVIEW' %}rgba(59, 130, 246, 0.36)
-                {% elif item.value == 'NEEDS_CLARIFICATION' %}rgba(249, 115, 22, 0.36)
-                {% elif item.value == 'VERIFIED' %}rgba(16, 185, 129, 0.36)
-                {% elif item.value == 'REJECTED' %}rgba(239, 68, 68, 0.36)
-                {% else %}rgba(100, 116, 139, 0.36){% endif %};
-                background:
-                {% if item.value == 'PENDING' %}linear-gradient(180deg, rgba(255, 251, 235, 0.96), rgba(254, 243, 199, 0.9))
-                {% elif item.value == 'UNDER_REVIEW' %}linear-gradient(180deg, rgba(239, 246, 255, 0.96), rgba(219, 234, 254, 0.9))
-                {% elif item.value == 'NEEDS_CLARIFICATION' %}linear-gradient(180deg, rgba(255, 247, 237, 0.96), rgba(254, 215, 170, 0.9))
-                {% elif item.value == 'VERIFIED' %}linear-gradient(180deg, rgba(236, 253, 245, 0.96), rgba(209, 250, 229, 0.9))
-                {% elif item.value == 'REJECTED' %}linear-gradient(180deg, rgba(254, 242, 242, 0.96), rgba(254, 202, 202, 0.9))
-                {% else %}linear-gradient(180deg, rgba(248, 250, 252, 0.96), rgba(226, 232, 240, 0.92)){% endif %};
-                box-shadow:
-                    inset 0 1px 0 rgba(255, 255, 255, 0.72),
-                    0 14px 26px rgba(15, 23, 42, 0.08);
-            "
-        >
-            <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+        <div class="status-card
+            {% if item.value == 'PENDING' %}pending
+            {% elif item.value == 'UNDER_REVIEW' %}under-review
+            {% elif item.value == 'NEEDS_CLARIFICATION' %}needs-clarification
+            {% elif item.value == 'VERIFIED' %}verified
+            {% elif item.value == 'REJECTED' %}rejected
+            {% else %}under-review{% endif %}">
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px;">
                 <div>
-                    <div
-                        style="
-                            font-size: 12px;
-                            font-weight: 800;
-                            letter-spacing: 0.12em;
-                            text-transform: uppercase;
-                            color:
-                            {% if item.value == 'PENDING' %}#9a3412
-                            {% elif item.value == 'UNDER_REVIEW' %}#1d4ed8
-                            {% elif item.value == 'NEEDS_CLARIFICATION' %}#c2410c
-                            {% elif item.value == 'VERIFIED' %}#047857
-                            {% elif item.value == 'REJECTED' %}#b91c1c
-                            {% else %}#475569{% endif %};
-                        "
-                    >
-                        {{ item.label }}
-                    </div>
-                    <div
-                        style="
-                            margin-top: 12px;
-                            font-size: 42px;
-                            font-weight: 900;
-                            line-height: 0.95;
-                            color:
-                            {% if item.value == 'PENDING' %}#7c2d12
-                            {% elif item.value == 'UNDER_REVIEW' %}#1e3a8a
-                            {% elif item.value == 'NEEDS_CLARIFICATION' %}#9a3412
-                            {% elif item.value == 'VERIFIED' %}#065f46
-                            {% elif item.value == 'REJECTED' %}#991b1b
-                            {% else %}#334155{% endif %};
-                        "
-                    >
-                        {{ item.count }}
-                    </div>
+                    <div class="status-label">{{ item.label }}</div>
+                    <div class="status-count">{{ item.count }}</div>
                 </div>
-                <span
-                    style="
-                        width: 14px;
-                        height: 14px;
-                        border-radius: 999px;
-                        flex: 0 0 auto;
-                        margin-top: 2px;
-                        background:
-                        {% if item.value == 'PENDING' %}#f59e0b
-                        {% elif item.value == 'UNDER_REVIEW' %}#3b82f6
-                        {% elif item.value == 'NEEDS_CLARIFICATION' %}#f97316
-                        {% elif item.value == 'VERIFIED' %}#10b981
-                        {% elif item.value == 'REJECTED' %}#ef4444
-                        {% else %}#64748b{% endif %};
-                        box-shadow: 0 0 0 6px
-                        {% if item.value == 'PENDING' %}rgba(245, 158, 11, 0.16)
-                        {% elif item.value == 'UNDER_REVIEW' %}rgba(59, 130, 246, 0.16)
-                        {% elif item.value == 'NEEDS_CLARIFICATION' %}rgba(249, 115, 22, 0.16)
-                        {% elif item.value == 'VERIFIED' %}rgba(16, 185, 129, 0.16)
-                        {% elif item.value == 'REJECTED' %}rgba(239, 68, 68, 0.16)
-                        {% else %}rgba(100, 116, 139, 0.16){% endif %};
-                    "
-                ></span>
+                <span class="status-dot"></span>
             </div>
         </div>
     {% endfor %}
@@ -127,45 +44,260 @@
 
 {% include "analytics/_dashboard_section.html" with section_id="admin-analytics" analytics_eyebrow="Operations View" analytics_heading_level="h2" analytics_title="Incident Analytics" analytics_lede="This internal analytics view uses all reported incidents, including pending, verified, rejected, and closed cases." %}
 
-<form method="get" style="margin-bottom: 18px;">
-    <div class="row" style="flex-wrap: wrap;">
-        <div class="col">{{ filter_form.q.label_tag }}{{ filter_form.q }}</div>
-        <div class="col">{{ filter_form.status.label_tag }}{{ filter_form.status }}</div>
-        <div class="col">{{ filter_form.category.label_tag }}{{ filter_form.category }}</div>
-    </div>
-    <div style="margin-top: 12px; display: flex; gap: 10px;">
-        <button type="submit">Filter</button>
-        <a href="{% url 'admin:index' %}" style="align-self: center;">Clear</a>
-    </div>
-</form>
+<!-- Filter Form -->
+<div class="section-block">
+    <span class="eyebrow">Filter Queue</span>
+    <form method="get" style="margin-top:8px;">
+        <div class="row" style="flex-wrap:wrap; gap:14px; margin-bottom:14px;">
+            <div class="col">{{ filter_form.q.label_tag }}{{ filter_form.q }}</div>
+            <div class="col">{{ filter_form.status.label_tag }}{{ filter_form.status }}</div>
+            <div class="col">{{ filter_form.category.label_tag }}{{ filter_form.category }}</div>
+        </div>
+        <div style="display:flex; gap:12px; align-items:center;">
+            <button type="submit">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                Apply Filter
+            </button>
+            <a href="{% url 'admin:index' %}" class="light-button">Clear</a>
+        </div>
+    </form>
+</div>
+
+<!-- Incidents Table -->
 {% if incidents %}
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Title</th>
-                <th>Reporter</th>
-                <th>Status</th>
-                <th>Category</th>
-                <th>Submitted</th>
-                <th>Updated</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for incident in incidents %}
+    <div class="section-block" style="padding:0; overflow-x:auto;">
+        <table id="incidents-table">
+            <thead>
                 <tr>
-                    <td>{{ incident.id }}</td>
-                    <td><a href="{% url 'admin:incident_detail' incident.id %}">{{ incident.title }}</a></td>
-                    <td>{{ incident.reporter_display_name }}</td>
-                    <td><span class="tag">{{ incident.get_status_display }}</span></td>
-                    <td>{{ incident.get_category_display }}</td>
-                    <td>{{ incident.created_at|localtime|date:"Y-m-d H:i" }}</td>
-                    <td>{{ incident.updated_at|localtime|date:"Y-m-d H:i" }}</td>
+                    <th>#ID</th>
+                    <th>Title</th>
+                    <th>Reporter</th>
+                    <th>Status</th>
+                    <th>Category</th>
+                    <th>Submitted</th>
+                    <th>Updated</th>
                 </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                {% for incident in incidents %}
+                    <tr data-incident-id="{{ incident.id }}">
+                        <td class="mono" style="color:#7A93B4; font-size:0.8rem;">#{{ incident.id }}</td>
+                        <td>
+                            <a href="{% url 'admin:incident_detail' incident.id %}"
+                               style="color:#38BDF8; font-weight:600; text-decoration:none;"
+                               onmouseover="this.style.color='#00E87A'" onmouseout="this.style.color='#38BDF8'">
+                                {{ incident.title }}
+                            </a>
+                        </td>
+                        <td style="color:#A8BDD6;">{{ incident.reporter_display_name }}</td>
+
+                        <!-- Inline Status -->
+                        <td class="inline-cell">
+                            <div class="inline-select-wrap" data-field="status" data-incident="{{ incident.id }}">
+                                <span class="tag inline-display">{{ incident.get_status_display }}</span>
+                                <select class="inline-select" data-field="status" data-incident="{{ incident.id }}"
+                                        data-url="{% url 'admin:incident_inline_update' incident.id %}"
+                                        style="display:none;">
+                                    {% for val, label in incident.STATUS_CHOICES %}
+                                        <option value="{{ val }}" {% if incident.status == val %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button class="inline-edit-btn" title="Edit status" onclick="activateInline(this)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                </button>
+                            </div>
+                        </td>
+
+                        <!-- Inline Category -->
+                        <td class="inline-cell">
+                            <div class="inline-select-wrap" data-field="category" data-incident="{{ incident.id }}">
+                                <span class="inline-display" style="color:#A8BDD6; font-size:0.875rem;">{{ incident.get_category_display }}</span>
+                                <select class="inline-select" data-field="category" data-incident="{{ incident.id }}"
+                                        data-url="{% url 'admin:incident_inline_update' incident.id %}"
+                                        style="display:none;">
+                                    {% for val, label in incident.CATEGORY_CHOICES %}
+                                        <option value="{{ val }}" {% if incident.category == val %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button class="inline-edit-btn" title="Edit category" onclick="activateInline(this)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                </button>
+                            </div>
+                        </td>
+
+                        <td style="color:#7A93B4; font-size:0.8rem;">{{ incident.created_at|localtime|date:"Y-m-d H:i" }}</td>
+                        <td class="updated-cell" style="color:#7A93B4; font-size:0.8rem;">{{ incident.updated_at|localtime|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 {% else %}
-    <p>No incidents found.</p>
+    <div class="panel" style="text-align:center; padding:40px;">
+        <p style="color:#7A93B4; font-size:0.9rem;">— No incidents found matching the current filters —</p>
+    </div>
 {% endif %}
+
+<style>
+/* ── Inline edit cells ─────────────────────────────── */
+.inline-cell { white-space: nowrap; }
+
+.inline-select-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.inline-edit-btn {
+    background: none;
+    border: none;
+    box-shadow: none;
+    min-height: unset;
+    padding: 3px 5px;
+    color: rgba(56,189,248,0.40);
+    cursor: pointer;
+    border-radius: 5px;
+    transition: color 0.15s, background 0.15s;
+    opacity: 0;
+}
+tr:hover .inline-edit-btn { opacity: 1; }
+.inline-edit-btn:hover {
+    color: #38BDF8;
+    background: rgba(56,189,248,0.10);
+    transform: none;
+}
+
+.inline-select {
+    background: rgba(8,14,26,0.92);
+    border: 1px solid rgba(56,189,248,0.35);
+    border-radius: 8px;
+    color: #C8D9EE;
+    font-family: 'Outfit', 'Inter', sans-serif;
+    font-size: 0.82rem;
+    padding: 4px 8px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+}
+.inline-select:focus { border-color: #38BDF8; }
+
+/* Saving spinner */
+.inline-saving {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border: 2px solid rgba(56,189,248,0.25);
+    border-top-color: #38BDF8;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Flash feedback */
+@keyframes flash-ok {
+    0%   { background: rgba(0,232,122,0.18); }
+    100% { background: transparent; }
+}
+@keyframes flash-err {
+    0%   { background: rgba(248,113,113,0.18); }
+    100% { background: transparent; }
+}
+.flash-ok  { animation: flash-ok  0.8s ease forwards; }
+.flash-err { animation: flash-err 0.8s ease forwards; }
+</style>
+
+<script>
+const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+
+function activateInline(btn) {
+    const wrap = btn.closest('.inline-select-wrap');
+    const display = wrap.querySelector('.inline-display');
+    const select  = wrap.querySelector('.inline-select');
+    const url     = select.dataset.url;
+
+    // Show select, hide display + btn
+    display.style.display = 'none';
+    btn.style.display     = 'none';
+    select.style.display  = 'inline-block';
+    select.focus();
+
+    // On change → save immediately
+    select.addEventListener('change', function handler() {
+        select.removeEventListener('change', handler);
+        saveInline(wrap, select, display, btn, url);
+    });
+
+    // On Escape → cancel
+    select.addEventListener('keydown', function esc(e) {
+        if (e.key === 'Escape') {
+            select.removeEventListener('keydown', esc);
+            cancelInline(wrap, select, display, btn);
+        }
+    });
+
+    // Click outside → cancel
+    document.addEventListener('click', function outside(e) {
+        if (!wrap.contains(e.target)) {
+            document.removeEventListener('click', outside);
+            cancelInline(wrap, select, display, btn);
+        }
+    });
+}
+
+function cancelInline(wrap, select, display, btn) {
+    select.style.display  = 'none';
+    display.style.display = '';
+    btn.style.display     = '';
+}
+
+function saveInline(wrap, select, display, btn, url) {
+    const field = select.dataset.field;
+    const value = select.value;
+    const row   = wrap.closest('tr');
+
+    // Show spinner
+    const spinner = document.createElement('span');
+    spinner.className = 'inline-saving';
+    wrap.appendChild(spinner);
+    select.disabled = true;
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': CSRF,
+        },
+        body: JSON.stringify({ field, value }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        spinner.remove();
+        if (data.ok) {
+            // Update display text
+            display.textContent = data.display;
+            cancelInline(wrap, select, display, btn);
+            row.classList.add('flash-ok');
+            row.addEventListener('animationend', () => row.classList.remove('flash-ok'), { once: true });
+            // Update Updated cell to now
+            const updatedCell = row.querySelector('.updated-cell');
+            if (updatedCell && !data.unchanged) {
+                const now = new Date();
+                const pad = n => String(n).padStart(2,'0');
+                updatedCell.textContent = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+            }
+        } else {
+            cancelInline(wrap, select, display, btn);
+            row.classList.add('flash-err');
+            row.addEventListener('animationend', () => row.classList.remove('flash-err'), { once: true });
+        }
+    })
+    .catch(() => {
+        spinner.remove();
+        cancelInline(wrap, select, display, btn);
+        row.classList.add('flash-err');
+        row.addEventListener('animationend', () => row.classList.remove('flash-err'), { once: true });
+    });
+}
+</script>
 {% endblock %}

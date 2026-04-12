@@ -1,119 +1,499 @@
-{% extends "base/site.html" %}
+{% extends 'base/site.html' %}
 {% load tz %}
 
-{% block title %}Incident #{{ incident.id }} | Admin Dashboard{% endblock %}
-
 {% block content %}
-<div style="display: flex; justify-content: space-between; gap: 16px; align-items: center; flex-wrap: wrap;">
-    <div>
-        <h1 style="margin-bottom: 6px;">Incident #{{ incident.id }}: {{ incident.title }}</h1>
-        <p class="muted" style="margin-top: 0;">Staff review workspace for incident handling and audit tracking.</p>
-    </div>
-    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-        <a href="{% url 'admin:index' %}">Back to dashboard</a>
-        {% if can_manage_staff_users %}
-            <a href="{% url 'admin:staff_accounts' %}">Staff Accounts</a>
-        {% endif %}
+<style>
+    :root {
+        --certificate-green: #00E87A;
+        --soft-blue: #38BDF8;
+        --deep-bg: #030816;
+        --card-bg: rgba(13, 22, 42, 0.45);
+        --border-color: rgba(56, 189, 248, 0.12);
+        --text-primary: #E8F2FF;
+        --text-secondary: #A8BDD6;
+        --text-muted: #4A6480;
+    }
+
+    body { background-color: var(--deep-bg); }
+
+    .premium-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 24px;
+        backdrop-filter: blur(8px);
+        margin-bottom: 24px;
+        transition: border-color 0.3s ease;
+    }
+    .premium-card:hover { border-color: rgba(56, 189, 248, 0.25); }
+
+    .header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 32px;
+        gap: 20px;
+    }
+
+    .incident-title-block h1 {
+        font-size: clamp(1.5rem, 3vw, 2.2rem);
+        font-weight: 800;
+        margin-bottom: 8px;
+        background: linear-gradient(135deg, #fff, #A8BDD6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .nav-breadcrumb {
+        display: flex;
+        gap: 8px;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-bottom: 12px;
+    }
+    .nav-breadcrumb a { color: var(--soft-blue); text-decoration: none; }
+
+    .grid-layout {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 24px;
+    }
+
+    /* Meta Info Grid */
+    .meta-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 16px;
+        margin-bottom: 32px;
+    }
+    .meta-item {
+        background: rgba(13, 22, 42, 0.6);
+        border: 1px solid rgba(56, 189, 248, 0.08);
+        padding: 16px;
+        border-radius: 12px;
+        text-align: left;
+    }
+    .meta-item .label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+    }
+    .meta-item .value {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    /* Section Headings */
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        color: var(--text-primary);
+    }
+    .section-title i { color: var(--soft-blue); font-size: 1.2rem; }
+
+    /* Evidence List */
+    .evidence-list { display: flex; flex-direction: column; gap: 12px; }
+    .evidence-item {
+        display: flex;
+        align-items: center;
+        background: rgba(8, 14, 26, 0.4);
+        border: 1px solid rgba(56, 189, 248, 0.1);
+        border-radius: 12px;
+        padding: 12px 16px;
+        transition: background 0.2s, border-color 0.2s;
+    }
+    .evidence-item:hover {
+        background: rgba(56, 189, 248, 0.05);
+        border-color: rgba(56, 189, 248, 0.3);
+    }
+
+    /* Sidebar actions */
+    .sidebar-block {
+        background: rgba(13, 22, 42, 0.6);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .sidebar-block h3 {
+        font-size: 0.9rem;
+        font-weight: 700;
+        margin-bottom: 16px;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .sidebar-block h3 i { color: var(--soft-blue); }
+
+    .tag-status {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        background: rgba(56, 189, 248, 0.1);
+        color: var(--soft-blue);
+        border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    /* Custom form styling for consistency */
+    select, input, textarea {
+        background: rgba(8, 14, 26, 0.8) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 10px !important;
+        color: var(--text-primary) !important;
+        font-family: 'Outfit', sans-serif !important;
+        padding: 10px 14px !important;
+        transition: border-color 0.2s !important;
+    }
+    select:focus, input:focus, textarea:focus {
+        border-color: var(--soft-blue) !important;
+        outline: none !important;
+    }
+
+    .comment-item {
+        position: relative;
+        padding-left: 24px;
+        border-left: 2px solid var(--border-color);
+        margin-bottom: 24px;
+    }
+    .comment-item.admin-note { border-left-color: var(--certificate-green); }
+
+    @media (max-width: 1024px) {
+        .grid-layout { grid-template-columns: 1fr; }
+    }
+
+    #audit-scroll::-webkit-scrollbar { width: 0; }
+
+    /* Custom Alert Modal */
+    #custom-confirm-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(3, 8, 22, 0.85);
+        backdrop-filter: blur(12px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    #custom-confirm-overlay.active { display: flex; opacity: 1; }
+
+    .confirm-card {
+        background: var(--card-bg);
+        border: 1px solid var(--soft-blue);
+        border-radius: 20px;
+        padding: 32px;
+        width: min(420px, 90vw);
+        text-align: center;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 30px rgba(56,189,248,0.15);
+        transform: scale(0.9);
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    #custom-confirm-overlay.active .confirm-card { transform: scale(1); }
+
+    .confirm-icon {
+        width: 60px; height: 60px;
+        background: rgba(56,189,248,0.1);
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 20px;
+        font-size: 1.8rem;
+        color: var(--soft-blue);
+    }
+
+    .confirm-title {
+        font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin-bottom: 12px;
+    }
+    .confirm-body {
+        font-size: 0.95rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 28px;
+    }
+
+    .confirm-actions { display: flex; gap: 12px; justify-content: center; }
+    .confirm-btn {
+        min-height: 44px; padding: 0 24px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s;
+    }
+    .confirm-btn-cancel {
+        background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-secondary);
+    }
+    .confirm-btn-cancel:hover { background: rgba(255,255,255,0.1); color: var(--text-primary); }
+    
+    .confirm-btn-ok {
+        background: var(--soft-blue); border: none; color: #030816;
+        box-shadow: 0 4px 15px rgba(56,189,248,0.4);
+    }
+    .confirm-btn-ok:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(56,189,248,0.6); }
+</style>
+
+<!-- Custom Confirm Modal -->
+<div id="custom-confirm-overlay">
+    <div class="confirm-card">
+        <div class="confirm-icon">📬</div>
+        <div class="confirm-title" id="confirm-title">Confirm Action</div>
+        <div class="confirm-body" id="confirm-body">Are you sure you want to proceed?</div>
+        <div class="confirm-actions">
+            <button class="confirm-btn confirm-btn-cancel" onclick="closeConfirm(false)">Cancel</button>
+            <button class="confirm-btn confirm-btn-ok" onclick="closeConfirm(true)">Confirm</button>
+        </div>
     </div>
 </div>
 
-<div class="row" style="margin-top: 18px; align-items: flex-start;">
-    <div class="col" style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px;">
-        <h2>Incident Details</h2>
-        <table>
-            <tbody>
-                <tr><th>ID</th><td>{{ incident.id }}</td></tr>
-                <tr><th>Reporter</th><td>{{ incident.reporter_display_name }}</td></tr>
-                <tr><th>Reporter Email</th><td>{{ incident.reporter_email|default:"Not provided" }}</td></tr>
-                <tr><th>Category</th><td>{{ incident.get_category_display }}</td></tr>
-                <tr><th>Status</th><td><span class="tag">{{ incident.get_status_display }}</span></td></tr>
-                <tr><th>Incident Date</th><td>{{ incident.incident_date }}</td></tr>
-                <tr><th>Submitted At</th><td>{{ incident.created_at|localtime|date:"Y-m-d H:i" }}</td></tr>
-                <tr><th>Last Updated</th><td>{{ incident.updated_at|localtime|date:"Y-m-d H:i" }}</td></tr>
-                <tr><th>Description</th><td style="white-space: pre-wrap;">{{ incident.description }}</td></tr>
-            </tbody>
-        </table>
+<div class="nav-breadcrumb">
+    <a href="{% url 'admin:index' %}">Dashboard</a>
+    <span>/</span>
+    <span>Incident Details</span>
+    <span>/</span>
+    <span style="color:var(--text-secondary)">#{{ incident.id }}</span>
+</div>
+
+<header class="header-section">
+    <div class="incident-title-block">
+        <h1>{{ incident.title }}</h1>
+        <div style="display:flex; gap:12px; align-items:center;">
+            <span class="tag-status">{{ incident.get_status_display }}</span>
+            <span style="color:var(--text-muted); font-size:0.85rem;">Ref: #{{ incident.id }}</span>
+        </div>
     </div>
+    <div style="display:flex; gap:12px;">
+        <a href="{% url 'admin:index' %}" class="light-button" style="min-height:44px; padding:0 24px; display:flex; align-items:center;">Back to Dashboard</a>
+    </div>
+</header>
 
-    <div class="col" style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px;">
-        <h2>Update Category</h2>
-        <form method="post" action="{% url 'admin:incident_category' incident.id %}">
-            {% csrf_token %}
-            {{ category_form.as_p }}
-            <button type="submit">Save Category</button>
-        </form>
-
-        <h2>Update Status</h2>
-        <form method="post" action="{% url 'admin:incident_status' incident.id %}">
-            {% csrf_token %}
-            {{ status_form.as_p }}
-            <button type="submit">Save Status</button>
-        </form>
-
-        <h2 style="margin-top: 24px;">Add Staff Note</h2>
-        <form method="post" action="{% url 'admin:incident_comment' incident.id %}">
-            {% csrf_token %}
-            {{ comment_form.as_p }}
-            <button type="submit">Add Note</button>
-        </form>
+<div class="meta-grid">
+    <div class="meta-item">
+        <div class="label">Reporter</div>
+        <div class="value">{{ incident.reporter_display_name }}</div>
+    </div>
+    <div class="meta-item">
+        <div class="label">Category</div>
+        <div class="value" style="color:var(--soft-blue);">{{ incident.get_category_display }}</div>
+    </div>
+    <div class="meta-item">
+        <div class="label">Incident Date</div>
+        <div class="value">{{ incident.incident_date }}</div>
+    </div>
+    <div class="meta-item">
+        <div class="label">Time Logged</div>
+        <div class="value">{{ incident.created_at|localtime|date:"Y-m-d H:i" }}</div>
     </div>
 </div>
 
-<div style="margin-top: 18px; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px;">
-    <h2>Evidence Files</h2>
-    {% if evidence_files %}
-        <ul>
-            {% for evidence in evidence_files %}
-                <li>
-                    <a href="{{ evidence.file.url }}" target="_blank" rel="noopener">{{ evidence.display_name }}</a>
-                    <span class="muted">
-                        uploaded {{ evidence.created_at|localtime|date:"Y-m-d H:i" }}
-                        {% if evidence.uploaded_by %}by {{ evidence.uploaded_by.username }}{% endif %}
-                    </span>
-                </li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p class="muted">No evidence files uploaded.</p>
-    {% endif %}
-</div>
+<div class="grid-layout">
+    <div class="main-column">
+        <!-- Description Section -->
+        <div class="premium-card">
+            <h2 class="section-title"><span>📝</span> Description</h2>
+            <div style="color:var(--text-secondary); line-height:1.75; font-size:0.95rem; white-space:pre-wrap;">{{ incident.description }}</div>
+        </div>
 
-<div class="row" style="margin-top: 18px; align-items: flex-start;">
-    <div class="col" style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px;">
-        <h2>Comments</h2>
-        {% if comments %}
-            {% for comment in comments %}
-                <div style="border-bottom: 1px solid #e5e7eb; padding: 12px 0;">
-                    <div style="display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
-                        <strong>
-                            {{ comment.created_by.username|default:"Unknown" }}
-                            {% if comment.is_admin_note %}<span class="tag">Admin Note</span>{% endif %}
-                        </strong>
-                        <span class="muted">{{ comment.created_at|localtime|date:"Y-m-d H:i" }}</span>
+        <!-- Reporter Details Card -->
+        <div class="premium-card">
+            <h2 class="section-title"><span>👤</span> Reporter Information</h2>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:24px;">
+                <div>
+                    <div class="label" style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">Full Name or Handle</div>
+                    <div style="font-weight:600; color:var(--text-primary);">{{ incident.reporter_display_name }}</div>
+                </div>
+                <div>
+                    <div class="label" style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">Contact Email</div>
+                    <div style="color:var(--soft-blue); font-weight:500;">{{ incident.reporter_email|default:"Not Provided (Anonymous)" }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Evidence Section -->
+        <div class="premium-card">
+            <h2 class="section-title"><span>📎</span> Evidence Files <span style="font-size:0.8rem; color:var(--text-muted); margin-left:8px;">({{ evidence_files|length }})</span></h2>
+            {% if evidence_files %}
+                <div class="evidence-list">
+                    {% for evidence in evidence_files %}
+                    <div class="evidence-item">
+                        <div style="width:40px; height:40px; border-radius:10px; background:rgba(56,189,248,0.1); display:flex; align-items:center; justify-content:center; margin-right:16px;">
+                            <span style="font-size:1.2rem;">📄</span>
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-weight:600; font-size:0.9rem; color:var(--text-primary);">{{ evidence.display_name }}</div>
+                            <div style="font-size:0.75rem; color:var(--text-muted);">Uploaded on {{ evidence.created_at|localtime|date:"Y-m-d H:i" }}</div>
+                        </div>
+                        <a href="{{ evidence.file.url }}" target="_blank" class="light-button" style="padding:6px 16px; font-size:0.8rem; min-height:unset;">View File</a>
                     </div>
-                    <p style="margin-bottom: 0; white-space: pre-wrap;">{{ comment.comment }}</p>
+                    {% endfor %}
                 </div>
-            {% endfor %}
-        {% else %}
-            <p class="muted">No comments yet.</p>
-        {% endif %}
+            {% else %}
+                <div style="text-align:center; padding:40px; border:1px dashed var(--border-color); border-radius:16px; color:var(--text-muted);">
+                    No evidence files attached to this incident.
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Comments Section -->
+        <div class="premium-card">
+            <h2 class="section-title"><span>💬</span> Comments & Internal Notes <span style="font-size:0.8rem; color:var(--text-muted); margin-left:8px;">({{ comments|length }})</span></h2>
+            {% if comments %}
+                <div style="display:flex; flex-direction:column;">
+                    {% for comment in comments %}
+                    <div class="comment-item {% if comment.is_admin_note %}admin-note{% endif %}">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <strong style="color:var(--text-primary); font-size:0.85rem;">{{ comment.created_by.username|default:"Unknown" }}</strong>
+                                {% if comment.is_admin_note %}<span style="font-size:9px; color:var(--certificate-green); text-transform:uppercase; font-weight:800; border:1px solid var(--certificate-green); padding:1px 5px; border-radius:4px;">Staff Note</span>{% endif %}
+                            </div>
+                            <span style="font-size:0.72rem; color:var(--text-muted);">{{ comment.created_at|localtime|date:"Y-m-d H:i" }}</span>
+                        </div>
+                        <div style="color:var(--text-secondary); font-size:0.875rem; line-height:1.6;">{{ comment.comment }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="text-align:center; padding:32px; color:var(--text-muted); border:1px dashed var(--border-color); border-radius:12px;">
+                    No comments yet.
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Audit Log Section -->
+        <div class="premium-card" style="margin-bottom:0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2 class="section-title" style="margin-bottom:0;"><span>📋</span> Audit Trail</h2>
+                <button id="audit-toggle" class="light-button" onclick="toggleAuditLog()" style="padding:4px 12px; font-size:0.75rem; min-height:30px;">Show History</button>
+            </div>
+            
+            <div id="audit-body" style="max-height:200px; overflow:hidden; position:relative; transition:max-height 0.4s ease-in-out;">
+                <div id="audit-fade" style="position:absolute; bottom:0; left:0; right:0; height:60px; background:linear-gradient(to bottom, transparent, rgba(3,8,22,0.95)); pointer-events:none; transition:opacity 0.3s;"></div>
+                <div id="audit-scroll" style="display:flex; flex-direction:column;">
+                    {% for log in audit_logs %}
+                    <div style="padding:16px 0; border-bottom:1px solid rgba(56,189,248,0.05); display:flex; gap:16px;">
+                        <span style="width:110px; font-size:0.75rem; color:var(--text-muted); flex-shrink:0;">{{ log.created_at|localtime|date:"Y-m-d H:i" }}</span>
+                        <div style="flex:1;">
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                                <span style="font-size:0.68rem; font-weight:800; color:var(--certificate-green); text-transform:uppercase; background:rgba(0,232,122,0.08); padding:2px 8px; border-radius:10px;">{{ log.get_action_display }}</span>
+                                <span style="font-size:0.8rem; color:var(--text-secondary);">by {{ log.user.username|default:"System" }}</span>
+                            </div>
+                            {% if log.message %}<div style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;">{{ log.message }}</div>{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="col" style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px;">
-        <h2>Audit Log</h2>
-        {% if audit_logs %}
-            {% for log in audit_logs %}
-                <div style="border-bottom: 1px solid #e5e7eb; padding: 12px 0;">
-                    <strong>{{ log.get_action_display }}</strong>
-                    <div class="muted">{{ log.created_at|localtime|date:"Y-m-d H:i" }} by {{ log.user.username|default:"Unknown" }}</div>
-                    {% if log.message %}
-                        <p style="margin-bottom: 0; white-space: pre-wrap;">{{ log.message }}</p>
-                    {% endif %}
+    <!-- Sidebar Column -->
+    <aside class="sidebar-column">
+        <div class="sidebar-block">
+            <h3><span>⚖️</span> Incident Actions</h3>
+            <form method="post" action="{% url 'admin:incident_status' incident.id %}">
+                {% csrf_token %}
+                <div style="margin-bottom:16px;">
+                    <label style="display:block; font-size:0.72rem; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; font-weight:700;">Update Status</label>
+                    {{ status_form.status }}
                 </div>
-            {% endfor %}
-        {% else %}
-            <p class="muted">No audit entries yet.</p>
-        {% endif %}
-    </div>
+                <button type="submit" class="primary-button" style="width:100%;">Apply Changes</button>
+            </form>
+            <hr style="margin:20px 0; border:0; border-top:1px solid var(--border-color);">
+            <form method="post" action="{% url 'admin:incident_category' incident.id %}">
+                {% csrf_token %}
+                <div style="margin-bottom:16px;">
+                    <label style="display:block; font-size:0.72rem; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; font-weight:700;">Update Category</label>
+                    {{ category_form.category }}
+                </div>
+                <button type="submit" class="light-button" style="width:100%;">Apply Changes</button>
+            </form>
+        </div>
+
+        <div class="sidebar-block" style="border-left:4px solid var(--certificate-green);">
+            <h3><span>📝</span> Add Staff Note</h3>
+            <form method="post" action="{% url 'admin:incident_comment' incident.id %}">
+                {% csrf_token %}
+                <div style="margin-bottom:12px;">{{ comment_form.comment }}</div>
+                <button type="submit" class="primary-button" style="width:100%; height:44px; background:linear-gradient(135deg, var(--certificate-green), #00C563); color:#031408; font-weight:700;">Add Note</button>
+            </form>
+        </div>
+
+        <div class="sidebar-block" style="border-left:4px solid var(--soft-blue);">
+            <h3><span>📧</span> Notifications</h3>
+            {% with recipient=incident.recipient_email %}
+            {% if recipient %}
+                <p style="font-size:0.72rem; color:var(--text-muted); margin-bottom:16px; display:flex; justify-content:space-between;">
+                    <span>Recipient:</span>
+                    <span style="color:var(--soft-blue); font-weight:600;">{{ recipient }}</span>
+                </p>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <form method="post" action="{% url 'admin:incident_resend_email' incident.id %}" onsubmit="return handleResend(this, 'Resend Submission Receipt?', 'This will resend the initial report confirmation to {{ recipient }}.');">
+                        {% csrf_token %}
+                        <input type="hidden" name="notification_type" value="submission">
+                        <button type="submit" class="light-button" style="width:100%; font-size:0.78rem; text-align:center;">Resend Receipt</button>
+                    </form>
+                    <form method="post" action="{% url 'admin:incident_resend_email' incident.id %}" onsubmit="return handleResend(this, 'Resend Status Notice?', 'This will notify {{ recipient }} that the status is now [{{ incident.get_status_display }}].');">
+                        {% csrf_token %}
+                        <input type="hidden" name="notification_type" value="status">
+                        <button type="submit" class="light-button" style="width:100%; font-size:0.78rem; text-align:center;">Resend Status Notice</button>
+                    </form>
+                </div>
+            {% else %}
+                <div style="padding:12px; background:rgba(248,113,113,0.05); border:1px dashed rgba(248,113,113,0.25); border-radius:10px; color:#F87171; font-size:0.72rem; text-align:center;">
+                    No email address available for this reporter.
+                </div>
+            {% endif %}
+            {% endwith %}
+        </div>
+    </aside>
 </div>
+
+<script>
+let confirmPromiseResolve;
+
+function openConfirm(title, body) {
+    document.getElementById('confirm-title').innerText = title;
+    document.getElementById('confirm-body').innerText = body;
+    document.getElementById('custom-confirm-overlay').classList.add('active');
+    return new Promise((resolve) => {
+        confirmPromiseResolve = resolve;
+    });
+}
+
+function closeConfirm(result) {
+    document.getElementById('custom-confirm-overlay').classList.remove('active');
+    if (confirmPromiseResolve) confirmPromiseResolve(result);
+}
+
+async function handleResend(form, title, body) {
+    if (form.dataset.confirmed === 'true') {
+        form.dataset.confirmed = 'false';
+        return true;
+    }
+    const confirmed = await openConfirm(title, body);
+    if (confirmed) {
+        form.dataset.confirmed = 'true';
+        form.requestSubmit(); 
+    }
+    return false;
+}
+
+let isExpanded = false;
+function toggleAuditLog() {
+    const body = document.getElementById('audit-body');
+    const fade = document.getElementById('audit-fade');
+    const btn  = document.getElementById('audit-toggle');
+    isExpanded = !isExpanded;
+    if (isExpanded) {
+        body.style.maxHeight = '1500px';
+        fade.style.opacity = '0';
+        btn.textContent = 'Collapse History';
+    } else {
+        body.style.maxHeight = '200px';
+        fade.style.opacity = '1';
+        btn.textContent = 'Show History';
+    }
+}
+</script>
 {% endblock %}

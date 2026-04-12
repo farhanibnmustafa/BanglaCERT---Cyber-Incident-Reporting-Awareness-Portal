@@ -1,5 +1,5 @@
 from django.contrib import messages
-from django.contrib.auth import login
+from django.contrib.auth import login, logout
 from django.shortcuts import redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 
@@ -87,3 +87,15 @@ def register(request):
             "next_url": _get_safe_next_url(request),
         },
     )
+
+
+def logout_view(request):
+    """
+    Custom logout that redirects to the appropriate login page based on user role.
+    """
+    was_staff = request.user.is_staff
+    logout(request)
+    messages.info(request, "You have been signed out.")
+    if was_staff:
+        return redirect("accounts:staff_login")
+    return redirect("accounts:login")

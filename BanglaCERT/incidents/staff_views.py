@@ -4,18 +4,18 @@ from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.views import redirect_to_login
 from django.db.models import Count, Q
-from django.http import HttpResponseNotAllowed
+from django.http import HttpResponseNotAllowed, JsonResponse
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
-from accounts.forms import StaffPromotionForm, StaffUserCreationForm, UserRegistrationForm
+from accounts.forms import StaffPromotionForm, StaffUserCreationForm, UserRegistrationForm, ManageStaffUserForm
 from analytics.services import build_analytics_dashboard
 from auditlog.models import AuditLog
 
-from .forms import IncidentStaffCategoryForm, IncidentStaffCommentForm, IncidentStaffFilterForm, IncidentStaffStatusForm
-from .models import Incident
-from .staff_tools import (
+from incidents.forms import IncidentStaffCategoryForm, IncidentStaffCommentForm, IncidentStaffFilterForm, IncidentStaffStatusForm
+from incidents.models import Incident
+from incidents.staff_tools import (
     build_audit_message,
     can_manage_staff_users,
     has_staff_users,
@@ -23,6 +23,7 @@ from .staff_tools import (
     log_status_change,
     notify_status_change,
 )
+from notifications.services import resend_incident_notification
 
 
 User = get_user_model()
@@ -304,3 +305,155 @@ def add_incident_comment(request, incident_id):
     )
     messages.success(request, "Admin note added.")
     return redirect("admin:incident_detail", incident_id=incident.id)
+
+
+@staff_required
+def inline_update_incident(request, incident_id):
+    """JSON endpoint for quick status/category updates from the dashboard table."""
+    if request.method != "POST":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    import json
+    try:
+        payload = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    field = payload.get("field")  # "status" or "category"
+    value = payload.get("value", "").strip()
+
+    if field not in ("status", "category") or not value:
+        return JsonResponse({"error": "Invalid field or value"}, status=400)
+
+    incident = get_object_or_404(Incident, id=incident_id)
+
+    if field == "status":
+        valid_values = dict(Incident.STATUS_CHOICES)
+        if value not in valid_values:
+            return JsonResponse({"error": "Invalid status value"}, status=400)
+        previous = incident.status
+        if previous == value:
+            return JsonResponse({"ok": True, "display": incident.get_status_display(), "unchanged": True})
+        incident.status = value
+        incident.save(update_fields=["status", "updated_at"])
+        log_status_change(request.user, incident, previous, value)
+        notify_status_change(incident, previous, value)
+        return JsonResponse({"ok": True, "display": incident.get_status_display()})
+
+    elif field == "category":
+        valid_values = dict(Incident.CATEGORY_CHOICES)
+        if value not in valid_values:
+            return JsonResponse({"error": "Invalid category value"}, status=400)
+        previous = incident.category
+        if previous == value:
+            return JsonResponse({"ok": True, "display": incident.get_category_display(), "unchanged": True})
+        incident.category = value
+        incident.save(update_fields=["category", "updated_at"])
+        log_staff_action(
+            request.user,
+            AuditLog.ACTION_UPDATE,
+            incident,
+            build_audit_message(
+                request.user,
+                f"Category changed from {_category_label(previous)} to {_category_label(value)}",
+            ),
+        )
+        return JsonResponse({"ok": True, "display": incident.get_category_display()})
+
+
+@staff_required
+def resend_incident_email(request, incident_id):
+    """Resend a submission or status notification email to the reporter."""
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    incident = get_object_or_404(Incident, id=incident_id)
+    notification_type = request.POST.get("notification_type", "").strip()
+
+    if notification_type not in ("submission", "status"):
+        messages.error(request, "Invalid notification type.")
+        return redirect("admin:incident_detail", incident_id=incident.id)
+
+    recipient = incident.reporter_email or (
+        incident.created_by.email if incident.created_by else ""
+    )
+    if not recipient:
+        messages.error(request, "No email address available for this reporter.")
+        return redirect("admin:incident_detail", incident_id=incident.id)
+
+    sent, reason = resend_incident_notification(incident, notification_type)
+
+    if sent:
+        log_staff_action(
+            request.user,
+            AuditLog.ACTION_UPDATE,
+            incident,
+            build_audit_message(
+                request.user, f"Resent {notification_type} email to {recipient}"
+            ),
+        )
+        messages.success(request, f"Email notification ({notification_type}) resent to {recipient}.")
+    else:
+        messages.error(request, f"Failed to send email notification: {reason}")
+
+    return redirect("admin:incident_detail", incident_id=incident.id)
+
+
+@manager_required
+def toggle_staff_active(request, user_id):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    target_user = get_object_or_404(User, id=user_id, is_staff=True)
+
+    if target_user == request.user:
+        messages.error(request, "You cannot deactivate your own account.")
+        return redirect("admin:staff_accounts")
+
+    target_user.is_active = not target_user.is_active
+    target_user.save(update_fields=["is_active"])
+
+    status = "activated" if target_user.is_active else "deactivated"
+    messages.success(request, f"Account for {target_user.username} has been {status}.")
+    return redirect("admin:staff_accounts")
+
+
+@manager_required
+def remove_staff_access(request, user_id):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    target_user = get_object_or_404(User, id=user_id, is_staff=True)
+
+    if target_user == request.user:
+        messages.error(request, "You cannot remove your own staff access.")
+        return redirect("admin:staff_accounts")
+
+    target_user.is_staff = False
+    target_user.save(update_fields=["is_staff"])
+
+    messages.success(request, f"Staff access revoked for {target_user.username}. They are now a normal user.")
+    return redirect("admin:staff_accounts")
+
+
+@manager_required
+def edit_staff_user(request, user_id):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    target_user = get_object_or_404(User, id=user_id, is_staff=True)
+    form = ManageStaffUserForm(request.POST, instance=target_user)
+
+    if form.is_valid():
+        # Prevent self-deactivation via form as well
+        if target_user == request.user and not form.cleaned_data.get("is_active"):
+            messages.error(request, "You cannot deactivate your own account.")
+            return redirect("admin:staff_accounts")
+
+        form.save()
+        messages.success(request, f"Account details for {target_user.username} updated.")
+    else:
+        error_msg = " ".join([" ".join(errors) for errors in form.errors.values()])
+        messages.error(request, f"Could not update staff account: {error_msg}")
+
+    return redirect("admin:staff_accounts")

@@ -4,65 +4,102 @@
 {% block title %}Incident #{{ incident.id }} | BanglaCERT{% endblock %}
 
 {% block content %}
-<h1>Incident #{{ incident.id }}: {{ incident.title }}</h1>
-<p><strong>Status:</strong> <span class="tag">{{ incident.get_status_display }}</span></p>
-<p><strong>Category:</strong> {{ incident.get_category_display }}</p>
-<p><strong>Incident Date:</strong> {{ incident.incident_date }}</p>
-<p><strong>Reported By:</strong> {{ incident.created_by.username|default:"Unknown" }}</p>
-<p><strong>Description</strong><br>{{ incident.description|linebreaksbr }}</p>
+<article class="detail-hero">
+    <span class="eyebrow">Your Report</span>
+    <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:flex-start; margin-bottom:8px;">
+        <h1 style="margin-bottom:4px;">Incident #{{ incident.id }}</h1>
+        <span class="tag">{{ incident.get_status_display }}</span>
+    </div>
 
-<h2>Evidence Files</h2>
-{% if evidence_files %}
-    <ul>
-        {% for evidence in evidence_files %}
-            <li>
-                <a href="{{ evidence.file.url }}" target="_blank" rel="noopener">{{ evidence.display_name }}</a>
-                <span class="muted">uploaded {{ evidence.created_at|localtime|date:"Y-m-d H:i" }}</span>
-            </li>
-        {% endfor %}
-    </ul>
-{% else %}
-    <p>No evidence files uploaded.</p>
-{% endif %}
+    <div style="display:grid; gap:10px; margin-top:16px;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <span class="tag">{{ incident.get_category_display }}</span>
+            <span class="muted" style="font-size:0.875rem; display:flex; align-items:center; gap:6px;">
+                📅 {{ incident.incident_date }}
+            </span>
+        </div>
+        <p class="muted" style="font-size:0.875rem; margin:0;">
+            Reported by: <strong style="color:#C8D9EE;">{{ incident.created_by.username|default:"Unknown" }}</strong>
+        </p>
+    </div>
 
-<p><a href="{% url 'incidents:my_incidents' %}">Back to my reports</a></p>
+    <div class="panel" style="margin-top:20px; background:rgba(11,18,32,0.60);">
+        <h2 style="font-size:1rem; margin-bottom:10px;">Description</h2>
+        <p style="margin:0; color:#A8BDD6; line-height:1.75; white-space:pre-wrap;">{{ incident.description|linebreaksbr }}</p>
+    </div>
 
-<h2>Comments</h2>
-{% if comments %}
-    <table>
-        <thead>
-            <tr>
-                <th>Author</th>
-                <th>Comment</th>
-                <th>Type</th>
-                <th>At</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in comments %}
-                <tr>
-                    <td>{{ item.created_by.username|default:"Unknown" }}</td>
-                    <td>{{ item.comment|linebreaksbr }}</td>
-                    <td>
-                        {% if item.is_admin_note %}
-                            <span class="tag">Admin Note</span>
-                        {% else %}
-                            <span class="tag">Comment</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ item.created_at|localtime|date:"Y-m-d H:i" }}</td>
-                </tr>
+    <div class="action-row" style="margin-top:16px;">
+        <a href="{% url 'incidents:my_incidents' %}" class="section-link">Back to My Reports</a>
+    </div>
+</article>
+
+<!-- Evidence Files -->
+<div class="section-block">
+    <h2>Evidence Files</h2>
+    {% if evidence_files %}
+        <ul style="margin:0; padding-left:20px; display:grid; gap:10px; margin-top:8px;">
+            {% for evidence in evidence_files %}
+                <li style="color:#A8BDD6;">
+                    <a href="{{ evidence.file.url }}" target="_blank" rel="noopener">
+                        {{ evidence.display_name }}
+                    </a>
+                    <span class="muted" style="font-size:0.8rem; font-family:'JetBrains Mono',monospace; margin-left:8px;">
+                        uploaded {{ evidence.created_at|localtime|date:"Y-m-d H:i" }}
+                    </span>
+                </li>
             {% endfor %}
-        </tbody>
-    </table>
-{% else %}
-    <p>No comments yet.</p>
-{% endif %}
+        </ul>
+    {% else %}
+        <p class="muted" style="font-size:0.9rem; margin-top:8px;">No evidence files have been uploaded.</p>
+    {% endif %}
+</div>
 
-<h2>Add Comment</h2>
-<form method="post" action="{% url 'incidents:add_comment' incident.id %}">
-    {% csrf_token %}
-    {{ comment_form.as_p }}
-    <button type="submit">Post Comment</button>
-</form>
+<!-- Comments -->
+<div class="section-block">
+    <h2>Comments</h2>
+    {% if comments %}
+        <div style="overflow-x:auto; margin-top:8px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Author</th>
+                        <th>Comment</th>
+                        <th>Type</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in comments %}
+                        <tr>
+                            <td style="color:#C8D9EE; font-weight:600;">{{ item.created_by.username|default:"Unknown" }}</td>
+                            <td style="color:#A8BDD6; line-height:1.6;">{{ item.comment|linebreaksbr }}</td>
+                            <td>
+                                {% if item.is_admin_note %}
+                                    <span class="tag" style="background:rgba(129,140,248,0.12); border-color:rgba(129,140,248,0.30); color:#818CF8;">Admin Note</span>
+                                {% else %}
+                                    <span class="tag">Comment</span>
+                                {% endif %}
+                            </td>
+                            <td class="muted" style="font-size:0.8rem; font-family:'JetBrains Mono',monospace; white-space:nowrap;">{{ item.created_at|localtime|date:"Y-m-d H:i" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="muted" style="font-size:0.9rem; margin-top:8px;">No comments yet.</p>
+    {% endif %}
+</div>
+
+<!-- Add Comment -->
+<div class="section-block">
+    <h2>Add Comment</h2>
+    <form method="post" action="{% url 'incidents:add_comment' incident.id %}">
+        {% csrf_token %}
+        {{ comment_form.as_p }}
+        <div style="margin-top:12px;">
+            <button type="submit">Post Comment</button>
+        </div>
+    </form>
+</div>
 {% endblock %}
