@@ -100,10 +100,10 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
        "NAME": "banglacert",
-        "USER": "banglacert_user",
-        "PASSWORD": "fam403229",
-        "HOST": "localhost",
-        "PORT": "5432",
+        "USER": os.getenv("DB_USER", "banglacert_user"),
+        "PASSWORD": os.getenv("DB_PASSWORD", ""),
+        "HOST": os.getenv("DB_HOST", "localhost"),
+        "PORT": os.getenv("DB_PORT", "5432"),
     }
 }
 
