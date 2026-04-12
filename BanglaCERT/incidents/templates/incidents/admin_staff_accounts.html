@@ -134,6 +134,14 @@
                                 {% endif %}
                             </td>
                             <td>
+                                {% if staff_user.is_active %}
+                                    <span class="tag" style="border-color: rgba(0, 232, 122, 0.3); color: #00E87A;">
+                                        ● Active
+                                    </span>
+                                {% else %}
+                                    <span class="tag" style="border-color: rgba(239, 68, 68, 0.3); color: #EF4444; background: rgba(239, 68, 68, 0.1);">
+                                        ○ Inactive
+                                    </span>
                                 {% endif %}
                             </td>
                             {% with status_class=staff_user.is_active|yesno:"btn-status-active,btn-status-inactive" toggle_label=staff_user.is_active|yesno:"Deactivate,Activate" %}
