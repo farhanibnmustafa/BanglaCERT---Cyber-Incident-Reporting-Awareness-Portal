@@ -1,79 +1,253 @@
 {% extends "base/site.html" %}
+{% load static %}
 
-{% block title %}Staff Accounts | BanglaCERT{% endblock %}
+{% block title %}Staff Accounts Management | BanglaCERT{% endblock %}
 
 {% block content %}
-<h1>Staff Accounts</h1>
-<p class="muted">Create new staff users or turn an existing normal user into staff.</p>
+<header class="detail-hero">
+    <div class="eyebrow">Administration</div>
+    <h1>Staff Accounts</h1>
+    <p class="lede">
+        Manage administrative access, create new staff users, or promote existing members to the security team.
+    </p>
 
-<div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px;">
-    <a href="{% url 'admin:index' %}">Incident Dashboard</a>
-    <a href="{% url 'admin:staff_accounts' %}">Staff Accounts</a>
-</div>
-
-<div class="row" style="align-items: flex-start;">
-    <div class="col" style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px;">
-        <h2>Create New Staff User</h2>
-        <form method="post">
-            {% csrf_token %}
-            <input type="hidden" name="action" value="create_staff">
-            {{ create_form.as_p }}
-            <button type="submit">Create Staff User</button>
-        </form>
+    <!-- Sub-Navigation Tabs -->
+    <div class="action-row" style="margin-top: 24px;">
+        <a href="{% url 'admin:index' %}" class="nav-link-button light-button">
+            <span>← Incident Dashboard</span>
+        </a>
+        <a href="{% url 'admin:staff_accounts' %}" class="nav-link-button" style="background: var(--bg-surface); border-color: var(--accent-green);">
+            <span>Staff Management</span>
+        </a>
     </div>
+</header>
 
-    <div class="col" style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px;">
-        <h2>Promote Existing User</h2>
-        {% if normal_users %}
-            <form method="post">
+<div class="row">
+    <!-- Create Form -->
+    <div class="col">
+        <div class="section-block">
+            <div class="eyebrow" style="border-color: var(--accent-cyan); color: var(--accent-cyan); margin-bottom: 20px;">Identity Creation</div>
+            <h2>Create New Staff</h2>
+            <p class="muted" style="margin-bottom: 24px; font-size: 0.9rem;">Provision a new administrative account with direct staff privileges.</p>
+
+            <form method="post" class="auth-form">
                 {% csrf_token %}
-                <input type="hidden" name="action" value="promote_staff">
-                {{ promote_form.as_p }}
-                <button type="submit">Make Staff</button>
+                <input type="hidden" name="action" value="create_staff">
+
+                {% for field in create_form %}
+                    <div class="auth-field" style="margin-bottom: 18px;">
+                        <label>{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="field-error" style="color: #FF6B6B; font-size: 0.75rem; margin-top: 4px;">{{ field.errors|striptags }}</div>
+                        {% endif %}
+                        {% if field.help_text %}
+                            <div class="muted" style="font-size: 0.75rem; margin-top: 4px; opacity: 0.8;">{{ field.help_text|striptags }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <button type="submit" class="auth-btn auth-btn-blue" style="width: 100%; margin-top: 10px;">
+                    Create Staff Member
+                </button>
             </form>
-        {% else %}
-            <p class="muted">There are no normal users available to promote right now.</p>
-        {% endif %}
+        </div>
+    </div>
+
+    <!-- Promote Form -->
+    <div class="col">
+        <div class="section-block">
+            <div class="eyebrow" style="border-color: var(--accent-purple); color: var(--accent-purple); margin-bottom: 20px;">Role Promotion</div>
+            <h2>Promote User</h2>
+            <p class="muted" style="margin-bottom: 24px; font-size: 0.9rem;">Elevate an existing normal user to the administrative team.</p>
+
+            {% if normal_users %}
+                <form method="post" class="auth-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="promote_staff">
+
+                    {% for field in promote_form %}
+                        <div class="auth-field" style="margin-bottom: 18px;">
+                            <label>{{ field.label }}</label>
+                            {{ field }}
+                        </div>
+                    {% endfor %}
+
+                    <button type="submit" class="auth-btn" style="width: 100%; margin-top: 10px; background: linear-gradient(135deg, #818CF8 0%, #6366F1 100%); border-color: #4F46E5;">
+                        Promote to Staff
+                    </button>
+                </form>
+            {% else %}
+                <div class="panel" style="background: rgba(129, 140, 248, 0.05); text-align: center; border-style: dashed;">
+                    <p class="muted">No regular users are currently available for promotion.</p>
+                </div>
+            {% endif %}
+        </div>
     </div>
 </div>
 
-<div style="margin-top: 18px; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px;">
-    <h2>Current Staff Users</h2>
+<!-- Staff Table -->
+<div class="section-block" style="margin-top: 12px;">
+    <div class="eyebrow" style="margin-bottom: 20px;">Security Team</div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2>Current Staff Members</h2>
+        <span class="tag" style="background: rgba(56, 189, 248, 0.1); border-color: var(--accent-cyan); color: var(--accent-cyan);">
+            {{ staff_users|length }} Total
+        </span>
+    </div>
+
     {% if staff_users %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Username</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Active</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for staff_user in staff_users %}
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
                     <tr>
-                        <td>{{ staff_user.username }}</td>
-                        <td>{{ staff_user.email|default:"No email" }}</td>
-                        <td>
-                            {% if staff_user.is_superuser %}
-                                <span class="tag">Main Admin</span>
-                            {% else %}
-                                <span class="tag">Staff</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if staff_user.is_active %}
-                                <span class="tag">Active</span>
-                            {% else %}
-                                <span class="tag">Inactive</span>
-                            {% endif %}
-                        </td>
+                        <th>Operator</th>
+                        <th>Email Address</th>
+                        <th>Security Role</th>
+                        <th>Status</th>
+                        <th style="text-align: right;">Manage</th>
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    {% for staff_user in staff_users %}
+                        <tr>
+                            <td>
+                                <div style="font-weight: 700; color: var(--text-bright);">{{ staff_user.username }}</div>
+                                <div class="muted" style="font-size: 0.75rem;">{{ staff_user.get_full_name|default:"Unnamed Identity" }}</div>
+                            </td>
+                            <td>{{ staff_user.email }}</td>
+                            <td>
+                                {% if staff_user.is_superuser %}
+                                    <span class="tag" style="background: rgba(0, 232, 122, 0.15); border-color: var(--accent-green); color: var(--accent-green);">
+                                        Main Admin
+                                    </span>
+                                {% else %}
+                                    <span class="tag" style="background: rgba(56, 189, 248, 0.15); border-color: var(--accent-cyan); color: var(--accent-cyan);">
+                                        Staff
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if staff_user.is_active %}
+                                    <span class="tag" style="border-color: rgba(0, 232, 122, 0.3); color: #00E87A;">
+                                        ● Active
+                                    </span>
+                                {% else %}
+                                    <span class="tag" style="border-color: rgba(239, 68, 68, 0.3); color: #EF4444; background: rgba(239, 68, 68, 0.1);">
+                                        ○ Inactive
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: right;">
+                                <div class="action-row" style="justify-content: flex-end; gap: 6px;">
+                                    <!-- Edit Button -->
+                                    <button class="nav-link-button light-button" style="padding: 4px 12px; height: 32px; min-height: 32px; font-size: 11px;"
+                                            onclick="openEditModal('{{ staff_user.id }}', '{{ staff_user.username }}', '{{ staff_user.email }}', '{{ staff_user.first_name }}', '{{ staff_user.last_name }}', {{ staff_user.is_active|yesno:'true,false' }})">
+                                        Edit
+                                    </button>
+
+                                    <!-- Toggle Active -->
+                                    <form method="post" action="{% url 'admin:toggle_staff_active' staff_user.id %}" style="margin: 0;" onsubmit="return confirm('Change account status for {{ staff_user.username }}?')">
+                                        {% csrf_token %}
+                                        <button type="submit" class="nav-link-button" style="padding: 4px 12px; height: 32px; min-height: 32px; font-size: 11px; background: {% if staff_user.is_active %}rgba(239, 68, 68, 0.15){% else %}rgba(0, 232, 122, 0.15){% endif %}; border-color: {% if staff_user.is_active %}#EF4444{% else %}#00E87A{% endif %}; color: {% if staff_user.is_active %}#EF4444{% else %}#00E87A{% endif %};">
+                                            {% if staff_user.is_active %}Deactivate{% else %}Activate{% endif %}
+                                        </button>
+                                    </form>
+
+                                    <!-- Remove Access -->
+                                    <form method="post" action="{% url 'admin:remove_staff_access' staff_user.id %}" style="margin: 0;" onsubmit="return confirm('Revoke ALL staff permissions for {{ staff_user.username }}?')">
+                                        {% csrf_token %}
+                                        <button type="submit" class="nav-link-button light-button" style="padding: 4px 12px; height: 32px; min-height: 32px; font-size: 11px; border-color: #FB923C; color: #FB923C;">
+                                            Revoke
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     {% else %}
-        <p class="muted">No staff users found.</p>
+        <div class="panel" style="text-align: center; border-style: dashed; padding: 60px 40px;">
+            <p class="muted">No staff members assigned to the portal.</p>
+        </div>
     {% endif %}
 </div>
+
+<!-- Edit Staff User Modal -->
+<div id="editModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+    <div class="section-block" style="width: min(500px, 95vw); max-height: 90vh; overflow-y: auto; box-shadow: 0 0 100px rgba(0,0,0,0.5);">
+        <div class="eyebrow" style="margin-bottom: 20px;">Operator Management</div>
+        <h2 id="modalTitle">Edit Staff Member</h2>
+        <div class="auth-divider"></div>
+
+        <form id="editForm" method="post" action="">
+            {% csrf_token %}
+            <div class="auth-field" style="margin-bottom: 16px;">
+                <label>Username</label>
+                <input type="text" name="username" id="edit_username" required>
+            </div>
+            <div class="auth-field" style="margin-bottom: 16px;">
+                <label>Email</label>
+                <input type="email" name="email" id="edit_email" required>
+            </div>
+            <div class="row" style="gap: 12px;">
+                <div class="col auth-field" style="margin-bottom: 16px;">
+                    <label>First Name</label>
+                    <input type="text" name="first_name" id="edit_first_name">
+                </div>
+                <div class="col auth-field" style="margin-bottom: 16px;">
+                    <label>Last Name</label>
+                    <input type="text" name="last_name" id="edit_last_name">
+                </div>
+            </div>
+
+            <div class="auth-field" style="margin-bottom: 24px; display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" name="is_active" id="edit_is_active" style="width: auto;">
+                <label for="edit_is_active" style="margin: 0; text-transform: none; font-size: 13px;">User is Active</label>
+            </div>
+
+            <div class="action-row" style="margin-top: 20px;">
+                <button type="submit" class="auth-btn auth-btn-blue" style="flex: 1;">Save Changes</button>
+                <button type="button" class="nav-link-button light-button" onclick="closeEditModal()" style="flex: 1;">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openEditModal(id, username, email, firstName, lastName, isActive) {
+        const modal = document.getElementById('editModal');
+        const form = document.getElementById('editForm');
+        const title = document.getElementById('modalTitle');
+
+        title.innerText = `Edit ${username}`;
+        form.action = `/admin/staff/${id}/edit/`;
+
+        document.getElementById('edit_username').value = username;
+        document.getElementById('edit_email').value = email;
+        document.getElementById('edit_first_name').value = firstName;
+        document.getElementById('edit_last_name').value = lastName;
+        document.getElementById('edit_is_active').checked = isActive;
+
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeEditModal() {
+        document.getElementById('editModal').style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+
+    // Close on escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeEditModal();
+    });
+
+    // Close on click outside
+    document.getElementById('editModal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('editModal')) closeEditModal();
+    });
+</script>
 {% endblock %}

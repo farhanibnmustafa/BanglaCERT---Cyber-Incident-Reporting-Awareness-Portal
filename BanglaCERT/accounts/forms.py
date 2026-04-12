@@ -166,3 +166,17 @@ class AdminExcludedPasswordResetForm(PasswordResetForm):
         """
         active_users = super().get_users(email)
         return [u for u in active_users if not u.is_staff]
+
+class ManageStaffUserForm(forms.ModelForm):
+    first_name = forms.CharField(required=False)
+    last_name = forms.CharField(required=False)
+
+    class Meta:
+        model = User
+        fields = ("username", "email", "first_name", "last_name", "is_active")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["email"].required = True
+        for field in self.fields.values():
+            field.widget.attrs.update({"class": "form-control"})

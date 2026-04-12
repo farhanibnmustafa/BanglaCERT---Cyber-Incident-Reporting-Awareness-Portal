@@ -9,7 +9,7 @@ from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
-from accounts.forms import StaffPromotionForm, StaffUserCreationForm, UserRegistrationForm
+from accounts.forms import StaffPromotionForm, StaffUserCreationForm, UserRegistrationForm, ManageStaffUserForm
 from analytics.services import build_analytics_dashboard
 from auditlog.models import AuditLog
 
@@ -398,3 +398,62 @@ def resend_incident_email(request, incident_id):
 
     return redirect("admin:incident_detail", incident_id=incident.id)
 
+
+@manager_required
+def toggle_staff_active(request, user_id):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    target_user = get_object_or_404(User, id=user_id, is_staff=True)
+
+    if target_user == request.user:
+        messages.error(request, "You cannot deactivate your own account.")
+        return redirect("admin:staff_accounts")
+
+    target_user.is_active = not target_user.is_active
+    target_user.save(update_fields=["is_active"])
+
+    status = "activated" if target_user.is_active else "deactivated"
+    messages.success(request, f"Account for {target_user.username} has been {status}.")
+    return redirect("admin:staff_accounts")
+
+
+@manager_required
+def remove_staff_access(request, user_id):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    target_user = get_object_or_404(User, id=user_id, is_staff=True)
+
+    if target_user == request.user:
+        messages.error(request, "You cannot remove your own staff access.")
+        return redirect("admin:staff_accounts")
+
+    target_user.is_staff = False
+    target_user.save(update_fields=["is_staff"])
+
+    messages.success(request, f"Staff access revoked for {target_user.username}. They are now a normal user.")
+    return redirect("admin:staff_accounts")
+
+
+@manager_required
+def edit_staff_user(request, user_id):
+    if request.method != "POST":
+        return HttpResponseNotAllowed(["POST"])
+
+    target_user = get_object_or_404(User, id=user_id, is_staff=True)
+    form = ManageStaffUserForm(request.POST, instance=target_user)
+
+    if form.is_valid():
+        # Prevent self-deactivation via form as well
+        if target_user == request.user and not form.cleaned_data.get("is_active"):
+            messages.error(request, "You cannot deactivate your own account.")
+            return redirect("admin:staff_accounts")
+
+        form.save()
+        messages.success(request, f"Account details for {target_user.username} updated.")
+    else:
+        error_msg = " ".join([" ".join(errors) for errors in form.errors.values()])
+        messages.error(request, f"Could not update staff account: {error_msg}")
+
+    return redirect("admin:staff_accounts")
