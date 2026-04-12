@@ -134,16 +134,9 @@
                                 {% endif %}
                             </td>
                             <td>
-                                {% if staff_user.is_active %}
-                                    <span class="tag" style="border-color: rgba(0, 232, 122, 0.3); color: #00E87A;">
-                                        ● Active
-                                    </span>
-                                {% else %}
-                                    <span class="tag" style="border-color: rgba(239, 68, 68, 0.3); color: #EF4444; background: rgba(239, 68, 68, 0.1);">
-                                        ○ Inactive
-                                    </span>
                                 {% endif %}
                             </td>
+                            {% with status_class=staff_user.is_active|yesno:"btn-status-active,btn-status-inactive" toggle_label=staff_user.is_active|yesno:"Deactivate,Activate" %}
                             <td style="text-align: right;">
                                 <div class="action-row" style="justify-content: flex-end; gap: 6px;">
                                     <!-- Edit Button -->
@@ -159,16 +152,16 @@
                                     </button>
 
                                     <!-- Toggle Active -->
-                                    <form method="post" action="{% url 'admin:toggle_staff_active' staff_user.id %}" style="margin: 0;" onsubmit="return confirm('Change account status for {{ staff_user.username }}?')">
+                                    <form method="post" action="{% url 'admin:toggle_staff_active' staff_user.id %}" style="margin: 0;" class="confirm-form" data-message="Change account status for {{ staff_user.username }}?">
                                         {% csrf_token %}
-                                        <button type="submit" class="nav-link-button btn-toggle-status {% if staff_user.is_active %}btn-status-active{% else %}btn-status-inactive{% endif %}" 
+                                        <button type="submit" class="nav-link-button btn-toggle-status {{ status_class }}" 
                                                 style="padding: 4px 12px; height: 32px; min-height: 32px; font-size: 11px;">
-                                            {% if staff_user.is_active %}Deactivate{% else %}Activate{% endif %}
+                                            {{ toggle_label }}
                                         </button>
                                     </form>
 
                                     <!-- Remove Access -->
-                                    <form method="post" action="{% url 'admin:remove_staff_access' staff_user.id %}" style="margin: 0;" onsubmit="return confirm('Revoke ALL staff permissions for {{ staff_user.username }}?')">
+                                    <form method="post" action="{% url 'admin:remove_staff_access' staff_user.id %}" style="margin: 0;" class="confirm-form" data-message="Revoke ALL staff permissions for {{ staff_user.username }}?">
                                         {% csrf_token %}
                                         <button type="submit" class="nav-link-button light-button" style="padding: 4px 12px; height: 32px; min-height: 32px; font-size: 11px; border-color: #FB923C; color: #FB923C;">
                                             Revoke
@@ -176,6 +169,7 @@
                                     </form>
                                 </div>
                             </td>
+                            {% endwith %}
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -265,6 +259,15 @@
                 data.lastName, 
                 data.isActive === 'true'
             );
+        });
+    });
+
+    // Confirmation logic handler
+    document.querySelectorAll('.confirm-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            if (!confirm(this.dataset.message)) {
+                e.preventDefault();
+            }
         });
     });
 
