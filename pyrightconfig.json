@@ -1,0 +1,13 @@
+{
+  "include": [
+    "BanglaCERT"
+  ],
+  "executionEnvironments": [
+    {
+      "root": "./BanglaCERT",
+      "extraPaths": [
+        "."
+      ]
+    }
+  ]
+}
