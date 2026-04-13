@@ -20,13 +20,12 @@ from django.urls import include, path
 from django.views.generic import RedirectView
 
 urlpatterns = [
-    path("", RedirectView.as_view(pattern_name="incidents:home", permanent=False)),
     path("staff-login/", RedirectView.as_view(pattern_name="accounts:staff_login", permanent=False)),
     path("favicon.ico", RedirectView.as_view(url="/static/admin/img/BanglaCERT-logo.png", permanent=False)),
     path("admin/", include(("incidents.admin_urls", "admin"), namespace="admin")),
     path('accounts/', include('accounts.urls')),
     path('core/', include('core.urls')),
-    path('incidents/', include('incidents.urls')),
+    path('', include('incidents.urls')),
     path('awareness/', include('awareness.urls')),
     path('analytics/', include('analytics.urls')),
     path('auditlog/', include('auditlog.urls')),
