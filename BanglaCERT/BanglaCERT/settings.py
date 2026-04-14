@@ -169,6 +169,7 @@ if SUPABASE_S3_ENABLED:
     AWS_DEFAULT_ACL = None
     AWS_S3_ADDRESSING_STYLE = "path"  # Required for Supabase S3 compatibility
     AWS_QUERYSTRING_AUTH = True      # Generates secure, temporary URLs for files
+    AWS_S3_SIGNATURE_VERSION = "s3v4" # Strictly required by Supabase
     
     STORAGES = {
         "default": {
@@ -178,8 +179,7 @@ if SUPABASE_S3_ENABLED:
             "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
         },
     }
-    # No need for MEDIA_ROOT when using S3
-    MEDIA_URL = f"{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/"
+    # No need for MEDIA_ROOT or manual MEDIA_URL when using S3 with signed URLs
 else:
     STORAGES = {
         "default": {
