@@ -53,6 +53,53 @@
         </div>
         {% endif %}
 
+        <!-- Evidence Files — Drag & Drop -->
+        <div style="margin-bottom:24px;">
+            <label for="{{ form.evidence_files.id_for_label }}" style="display:block; margin-bottom:8px; font-size: 0.85rem; font-weight: 700; color: #A8BDD6; text-transform: uppercase;">
+                Upload Additional Evidence <span style="color:#7A93B4; font-weight:400;">(Optional)</span>
+            </label>
+
+            <!-- Hidden real input -->
+            <div style="display:none;">{{ form.evidence_files }}</div>
+
+            <!-- Drop Zone -->
+            <div id="drop-zone"
+                 style="
+                    border: 2px dashed rgba(56,189,248,0.35);
+                    border-radius: 14px;
+                    padding: 32px 20px;
+                    text-align: center;
+                    background: rgba(11,18,32,0.60);
+                    cursor: pointer;
+                    transition: border-color 0.2s ease, background 0.2s ease;
+                 "
+                 onclick="document.getElementById('{{ form.evidence_files.id_for_label }}').click()">
+
+                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24"
+                     fill="none" stroke="rgba(56,189,248,0.60)" stroke-width="1.5"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     style="margin-bottom:12px; display:block; margin-left:auto; margin-right:auto;">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+
+                <p style="margin:0 0 6px; color:#C8D9EE; font-size:0.95rem; font-weight:600;">
+                    Drag &amp; drop new files here
+                </p>
+                <p style="margin:0; color:#7A93B4; font-size:0.82rem;">
+                    or <span style="color:#38BDF8; font-weight:700;">browse to select</span>
+                </p>
+            </div>
+
+            <!-- File preview list -->
+            <ul id="file-list" style="list-style:none; margin:10px 0 0; padding:0; display:grid; gap:8px;"></ul>
+
+            {% if form.evidence_files.errors %}
+                <div class="error-text" style="margin-top:8px;">{{ form.evidence_files.errors|striptags }}</div>
+            {% endif %}
+        </div>
+
         <div style="display:flex; gap:16px; align-items:center; margin-top:30px; border-top:1px solid rgba(56,189,248,0.1); padding-top:20px;">
             <button type="submit">Save Changes</button>
             <a href="{% if is_public %}{% url 'incidents:public_report_status' %}{% else %}{% url 'incidents:detail' incident.id %}{% endif %}" 
@@ -95,5 +142,89 @@
         font-size: 0.75rem;
         margin-top: 5px;
     }
+
+    #drop-zone.drag-over {
+        border-color: rgba(56,189,248,0.80);
+        background: rgba(56,189,248,0.08);
+    }
+    .file-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 14px;
+        border: 1px solid rgba(56,189,248,0.18);
+        border-radius: 10px;
+        background: rgba(17,32,56,0.70);
+        font-size: 0.85rem;
+        color: #C8D9EE;
+        animation: rise-in 0.2s ease both;
+    }
+    .file-item .file-icon { flex-shrink: 0; }
+    .file-item .file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-item .file-size { color: #7A93B4; font-size: 0.75rem; flex-shrink: 0; }
+    .file-item .file-remove {
+        background: none; border: none; color: #F87171; cursor: pointer; font-size: 18px;
+        line-height: 1; padding: 0 2px; transition: color 0.15s; min-height: unset; box-shadow: none;
+    }
+    .file-item .file-remove:hover { color: #EF4444; transform: none; }
 </style>
+
+<script>
+(function() {
+    const zone  = document.getElementById('drop-zone');
+    const list  = document.getElementById('file-list');
+    const input = document.getElementById('{{ form.evidence_files.id_for_label }}');
+    if (!zone || !list || !input) return;
+
+    let chosen = new DataTransfer();
+
+    function fmtSize(b) {
+        if (b < 1024) return b + ' B';
+        if (b < 1048576) return (b / 1024).toFixed(1) + ' KB';
+        return (b / 1048576).toFixed(1) + ' MB';
+    }
+    function fileIcon(name) {
+        const ext = name.split('.').pop().toLowerCase();
+        if (['jpg','jpeg','png','gif','webp'].includes(ext)) return '🖼';
+        if (ext === 'pdf') return '📄';
+        return '📎';
+    }
+    function renderList() {
+        list.innerHTML = '';
+        Array.from(chosen.files).forEach((file, idx) => {
+            const li = document.createElement('li');
+            li.className = 'file-item';
+            li.innerHTML = `
+                <span class="file-icon">${fileIcon(file.name)}</span>
+                <span class="file-name" title="${file.name}">${file.name}</span>
+                <span class="file-size">${fmtSize(file.size)}</span>
+                <button type="button" class="file-remove" title="Remove" data-idx="${idx}">×</button>
+            `;
+            list.appendChild(li);
+        });
+        input.files = chosen.files;
+    }
+    function addFiles(files) {
+        Array.from(files).forEach(f => chosen.items.add(f));
+        renderList();
+    }
+    input.addEventListener('change', () => addFiles(input.files));
+    list.addEventListener('click', e => {
+        const btn = e.target.closest('.file-remove');
+        if (!btn) return;
+        const idx = parseInt(btn.dataset.idx, 10);
+        const next = new DataTransfer();
+        Array.from(chosen.files).forEach((f, i) => { if (i !== idx) next.items.add(f); });
+        chosen = next;
+        renderList();
+    });
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    ['dragleave','dragend'].forEach(ev => zone.addEventListener(ev, () => zone.classList.remove('drag-over')));
+    zone.addEventListener('drop', e => {
+        e.preventDefault();
+        zone.classList.remove('drag-over');
+        addFiles(e.dataTransfer.files);
+    });
+})();
+</script>
 {% endblock %}

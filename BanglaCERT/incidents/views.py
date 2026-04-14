@@ -280,6 +280,8 @@ def edit_incident(request, incident_id):
         form = IncidentReportForm(request.POST, request.FILES, instance=incident)
         if form.is_valid():
             form.save()
+            # Save any new evidence files
+            _save_evidence_files(incident, request.user, form.cleaned_data.get("evidence_files", []))
             messages.success(request, "Incident updated successfully.")
             return redirect("incidents:detail", incident_id=incident.id)
     else:
@@ -315,6 +317,8 @@ def public_edit_incident(request):
         form = IncidentPublicReportForm(request.POST, request.FILES, instance=incident)
         if form.is_valid():
             form.save()
+            # Save any new evidence files (no user for anonymous)
+            _save_evidence_files(incident, None, form.cleaned_data.get("evidence_files", []))
             messages.success(request, "Incident details updated successfully.")
             return redirect("incidents:public_report_status")
     else:
