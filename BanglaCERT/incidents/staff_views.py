@@ -297,13 +297,34 @@ def add_incident_comment(request, incident_id):
     comment.is_admin_note = True
     comment.save()
 
+    # Create notification for the reporter
+    from notifications.models import Notification
+    from django.urls import reverse
+    
+    # CASE 1: Registered User
+    if incident.created_by:
+        Notification.objects.create(
+            recipient=incident.created_by,
+            incident=incident,
+            message=f"Official Admin Note added to your report #{incident.pk}",
+            url=reverse('incidents:detail', kwargs={'incident_id': incident.pk})
+        )
+    # CASE 2: Anonymous User (Create incident-linked notification without recipient)
+    else:
+        Notification.objects.create(
+            recipient=None,
+            incident=incident,
+            message=f"Official Admin Note added to your anonymous report",
+            url=reverse('incidents:public_report_status')
+        )
+
     log_staff_action(
         request.user,
         AuditLog.ACTION_UPDATE,
         incident,
         build_audit_message(request.user, "Admin note added"),
     )
-    messages.success(request, "Admin note added.")
+    messages.success(request, "Admin note added. Notification sent.")
     return redirect("admin:incident_detail", incident_id=incident.id)
 
 

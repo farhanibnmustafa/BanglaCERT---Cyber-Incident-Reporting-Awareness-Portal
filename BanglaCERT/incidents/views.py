@@ -124,23 +124,68 @@ def public_report_success(request):
 def public_report_status(request):
     stored_tracking = request.session.get("public_report_tracking") or {}
     incident = None
+    comment_form = None
 
-    if request.method == "POST":
+    # 1. Handle Incident Lookup or session-based retrieval
+    if request.method == "POST" and "access_token" in request.POST:
         form = AnonymousIncidentStatusLookupForm(request.POST)
         if form.is_valid():
             incident = _get_public_tracked_incident(
                 tracking_id=form.cleaned_data["tracking_id"],
                 access_token=form.cleaned_data["access_token"],
             )
-            if incident is None:
+            if incident:
+                # Store in session for the 'reply' POST
+                _store_public_report_tracking(request, incident)
+            else:
                 form.add_error(None, "Tracking ID or access token is invalid.")
     else:
+        # Try to retrieve from session if it's already there (for the reply form or refreshing)
+        tracking_id = stored_tracking.get("tracking_id")
+        access_token = stored_tracking.get("access_token")
+        if tracking_id and access_token:
+            incident = _get_public_tracked_incident(tracking_id, access_token)
+        
         form = AnonymousIncidentStatusLookupForm(
             initial={
-                "tracking_id": stored_tracking.get("tracking_id", ""),
-                "access_token": stored_tracking.get("access_token", ""),
+                "tracking_id": tracking_id or "",
+                "access_token": access_token or "",
             }
         )
+
+    # 2. Handle Anonymous Comment Submission
+    if incident and request.method == "POST" and "comment" in request.POST:
+        comment_form = IncidentCommentForm(request.POST)
+        if comment_form.is_valid():
+            comment = comment_form.save(commit=False)
+            comment.incident = incident
+            comment.created_by = None  # Explicitly null for anonymous
+            comment.is_admin_note = False
+            comment.save()
+            
+            # Create notification for staff
+            from notifications.models import Notification
+            from django.urls import reverse
+            from django.contrib.auth import get_user_model
+            
+            User = get_user_model()
+            staff_users = User.objects.filter(is_staff=True)
+            for staff in staff_users:
+                Notification.objects.create(
+                    recipient=staff,
+                    incident=incident,
+                    message=f"New anonymous reply on Incident #{incident.pk}",
+                    url=reverse('admin:incident_detail', kwargs={'incident_id': incident.pk})
+                )
+                
+            messages.success(request, "Your reply has been sent to the BanglaCERT team.")
+            return redirect("incidents:public_report_status")
+
+    if incident:
+        comment_form = IncidentCommentForm()
+        comments = incident.comments.select_related("created_by").all()
+    else:
+        comments = []
 
     return render(
         request,
@@ -148,6 +193,8 @@ def public_report_status(request):
         {
             "form": form,
             "incident": incident,
+            "comments": comments,
+            "comment_form": comment_form,
         },
     )
 
@@ -198,6 +245,22 @@ def add_comment(request, incident_id):
         comment.created_by = request.user
         comment.is_admin_note = False
         comment.save()
+        
+        # Notify staff about user comment
+        from notifications.models import Notification
+        from django.urls import reverse
+        from django.contrib.auth import get_user_model
+        
+        User = get_user_model()
+        staff_users = User.objects.filter(is_staff=True)
+        for staff in staff_users:
+            Notification.objects.create(
+                recipient=staff,
+                incident=incident,
+                message=f"New comment from {request.user.username} on Incident #{incident.pk}",
+                url=reverse('admin:incident_detail', kwargs={'incident_id': incident.pk})
+            )
+            
         messages.success(request, "Comment added.")
     else:
         messages.error(request, "Unable to add comment. Please check your input.")
