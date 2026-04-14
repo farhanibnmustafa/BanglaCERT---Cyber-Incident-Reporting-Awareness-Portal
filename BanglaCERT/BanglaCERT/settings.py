@@ -148,10 +148,48 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+# Cloud Storage Configuration (Supabase S3 Compatible)
+# Set these in your Vercel Project Settings for production
+SUPABASE_S3_ENABLED = all([
+    os.getenv("SUPABASE_ACCESS_KEY_ID"),
+    os.getenv("SUPABASE_SECRET_ACCESS_KEY"),
+    os.getenv("SUPABASE_STORAGE_BUCKET"),
+    os.getenv("SUPABASE_S3_ENDPOINT")
+])
+
+if SUPABASE_S3_ENABLED:
+    AWS_ACCESS_KEY_ID = os.getenv("SUPABASE_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY = os.getenv("SUPABASE_SECRET_ACCESS_KEY")
+    AWS_STORAGE_BUCKET_NAME = os.getenv("SUPABASE_STORAGE_BUCKET")
+    AWS_S3_ENDPOINT_URL = os.getenv("SUPABASE_S3_ENDPOINT")
+    AWS_S3_REGION_NAME = "ap-northeast-1"  # Correct region based on your database setup
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_DEFAULT_ACL = None
+    AWS_S3_ADDRESSING_STYLE = "path"  # Required for Supabase S3 compatibility
+    AWS_QUERYSTRING_AUTH = True      # Generates secure, temporary URLs for files
+    
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
+    # No need for MEDIA_ROOT when using S3
+    MEDIA_URL = f"{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/"
+else:
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = BASE_DIR / 'media'
 
 # Email settings
 # Default to console email in development so SMTP credentials are never required in code.
