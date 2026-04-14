@@ -12,5 +12,7 @@ urlpatterns = [
     path("public-report/status/", views.public_report_status, name="public_report_status"),
     path("mine/", views.my_incidents, name="my_incidents"),
     path("<int:incident_id>/", views.incident_detail, name="detail"),
+    path("<int:incident_id>/edit/", views.edit_incident, name="edit"),
     path("<int:incident_id>/comment/", views.add_comment, name="add_comment"),
+    path("public-report/status/edit/", views.public_edit_incident, name="public_edit"),
 ]

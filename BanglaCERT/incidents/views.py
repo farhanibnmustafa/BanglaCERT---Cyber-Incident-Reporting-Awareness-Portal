@@ -265,3 +265,63 @@ def add_comment(request, incident_id):
     else:
         messages.error(request, "Unable to add comment. Please check your input.")
     return redirect("incidents:detail", incident_id=incident.id)
+
+
+@login_required
+def edit_incident(request, incident_id):
+    incident = get_incident_for_user(request.user, incident_id)
+    
+    # Check if the incident is locked
+    if incident.status in [Incident.STATUS_VERIFIED, Incident.STATUS_REJECTED, Incident.STATUS_CLOSED]:
+        messages.error(request, "This incident is locked and cannot be edited as it has already been reviewed.")
+        return redirect("incidents:detail", incident_id=incident.id)
+
+    if request.method == "POST":
+        form = IncidentReportForm(request.POST, request.FILES, instance=incident)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Incident updated successfully.")
+            return redirect("incidents:detail", incident_id=incident.id)
+    else:
+        form = IncidentReportForm(instance=incident)
+
+    return render(request, "incidents/edit_incident.html", {
+        "form": form,
+        "incident": incident,
+        "is_public": False
+    })
+
+
+def public_edit_incident(request):
+    stored_tracking = request.session.get("public_report_tracking") or {}
+    tracking_id = stored_tracking.get("tracking_id")
+    access_token = stored_tracking.get("access_token")
+
+    if not tracking_id or not access_token:
+        messages.error(request, "You must be tracked in an anonymous session to edit.")
+        return redirect("incidents:public_report_status")
+
+    incident = _get_public_tracked_incident(tracking_id, access_token)
+    if not incident:
+        messages.error(request, "Invalid tracking credentials.")
+        return redirect("incidents:public_report_status")
+
+    # Check if locked
+    if incident.status in [Incident.STATUS_VERIFIED, Incident.STATUS_REJECTED, Incident.STATUS_CLOSED]:
+        messages.error(request, "This incident is locked and cannot be edited as it has already been reviewed.")
+        return redirect("incidents:public_report_status")
+
+    if request.method == "POST":
+        form = IncidentPublicReportForm(request.POST, request.FILES, instance=incident)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Incident details updated successfully.")
+            return redirect("incidents:public_report_status")
+    else:
+        form = IncidentPublicReportForm(instance=incident)
+
+    return render(request, "incidents/edit_incident.html", {
+        "form": form,
+        "incident": incident,
+        "is_public": True
+    })
