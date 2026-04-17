@@ -4,14 +4,16 @@
 {% block content %}
 <style>
     :root {
-        --certificate-green: #00E87A;
-        --soft-blue: #38BDF8;
-        --deep-bg: #030816;
-        --card-bg: rgba(13, 22, 42, 0.45);
-        --border-color: rgba(56, 189, 248, 0.12);
-        --text-primary: #E8F2FF;
-        --text-secondary: #A8BDD6;
-        --text-muted: #4A6480;
+        --accent-blue:     #4361EE;
+        --accent-blue2:    #5B7BFF;
+        --accent-light-b:  #8AA9FF;
+        --soft-blue:       #60A5FA;
+        --deep-bg:         #03061A;
+        --card-bg:         rgba(10, 16, 48, 0.55);
+        --border-color:    rgba(67, 97, 238, 0.18);
+        --text-primary:    #E8EFFE;
+        --text-secondary:  #9AAED4;
+        --text-muted:      #4A6490;
     }
 
     body { background-color: var(--deep-bg); }
@@ -25,29 +27,64 @@
         margin-bottom: 24px;
         transition: border-color 0.3s ease;
     }
-    .premium-card:hover { border-color: rgba(56, 189, 248, 0.25); }
+    .premium-card:hover { border-color: rgba(91, 123, 255, 0.32); }
 
-    .header-section {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 32px;
-        gap: 20px;
+    /* ── Hero header card ── */
+    .hero-card {
+        background: linear-gradient(160deg, rgba(10,16,50,0.80) 0%, rgba(5,9,28,0.90) 100%);
+        border: 1px solid rgba(67,97,238,0.28);
+        border-radius: 20px;
+        padding: 24px 28px;
+        backdrop-filter: blur(12px);
+        margin-bottom: 24px;
+        box-shadow: 0 4px 32px rgba(2,5,20,0.55), inset 0 1px 0 rgba(91,123,255,0.10);
     }
 
-    .incident-title-block h1 {
-        font-size: clamp(1.5rem, 3vw, 2.2rem);
-        font-weight: 800;
+    /* ── Meta pill (inside hero) ── */
+    .meta-pill {
+        background: rgba(4,7,24,0.65);
+        border: 1px solid rgba(67,97,238,0.16);
+        border-radius: 12px;
+        padding: 12px 16px;
+    }
+    .meta-pill-label {
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--text-muted);
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    .meta-pill-value {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    /* ── Field labels ── */
+    .detail-label {
+        font-size: 0.70rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    .action-label {
+        display: block;
+        font-size: 0.70rem;
+        color: var(--text-muted);
         margin-bottom: 8px;
-        background: linear-gradient(135deg, #fff, #A8BDD6);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.08em;
     }
+    .action-field-group { display: flex; flex-direction: column; }
 
     .nav-breadcrumb {
         display: flex;
         gap: 8px;
-        font-size: 0.85rem;
+        font-size: 0.82rem;
         color: var(--text-muted);
         margin-bottom: 12px;
     }
@@ -67,8 +104,8 @@
         margin-bottom: 32px;
     }
     .meta-item {
-        background: rgba(13, 22, 42, 0.6);
-        border: 1px solid rgba(56, 189, 248, 0.08);
+        background: rgba(10, 16, 48, 0.65);
+        border: 1px solid rgba(67, 97, 238, 0.12);
         padding: 16px;
         border-radius: 12px;
         text-align: left;
@@ -139,15 +176,15 @@
         font-size: 0.75rem;
         font-weight: 700;
         text-transform: uppercase;
-        background: rgba(56, 189, 248, 0.1);
-        color: var(--soft-blue);
-        border: 1px solid rgba(56, 189, 248, 0.3);
+        background: rgba(67, 97, 238, 0.14);
+        color: var(--accent-light-b);
+        border: 1px solid rgba(91, 123, 238, 0.32);
     }
 
     /* Custom form styling for consistency */
     select, input, textarea {
-        background: rgba(8, 14, 26, 0.8) !important;
-        border: 1px solid var(--border-color) !important;
+        background: rgba(4, 7, 28, 0.85) !important;
+        border: 1px solid rgba(67, 97, 238, 0.22) !important;
         border-radius: 10px !important;
         color: var(--text-primary) !important;
         font-family: 'Outfit', sans-serif !important;
@@ -155,17 +192,42 @@
         transition: border-color 0.2s !important;
     }
     select:focus, input:focus, textarea:focus {
-        border-color: var(--soft-blue) !important;
+        border-color: var(--accent-blue2) !important;
         outline: none !important;
+        box-shadow: 0 0 0 3px rgba(67,97,238,0.16) !important;
     }
 
     .comment-item {
         position: relative;
         padding-left: 24px;
-        border-left: 2px solid var(--border-color);
+        border-left: 2px solid rgba(67, 97, 238, 0.25);
         margin-bottom: 24px;
     }
-    .comment-item.admin-note { border-left-color: var(--certificate-green); }
+    .comment-item.admin-note { border-left-color: var(--accent-blue2); }
+
+    /* Primary Button */
+    .primary-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #3B5BDB 0%, #4361EE 50%, #5B7BFF 100%);
+        border: none;
+        border-radius: 10px;
+        color: #fff;
+        font-weight: 700;
+        font-size: 0.875rem;
+        font-family: inherit;
+        cursor: pointer;
+        letter-spacing: 0.04em;
+        transition: filter 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: 0 6px 20px rgba(67,97,238,0.40);
+    }
+    .primary-button:hover {
+        filter: brightness(1.12);
+        transform: translateY(-1px);
+        box-shadow: 0 10px 28px rgba(91,123,255,0.55);
+        color: #fff;
+    }
 
     @media (max-width: 1024px) {
         .grid-layout { grid-template-columns: 1fr; }
@@ -203,12 +265,12 @@
 
     .confirm-icon {
         width: 60px; height: 60px;
-        background: rgba(56,189,248,0.1);
+        background: rgba(67,97,238,0.14);
         border-radius: 50%;
         display: flex; align-items: center; justify-content: center;
         margin: 0 auto 20px;
         font-size: 1.8rem;
-        color: var(--soft-blue);
+        color: var(--accent-blue2);
     }
 
     .confirm-title {
@@ -228,10 +290,10 @@
     .confirm-btn-cancel:hover { background: rgba(255,255,255,0.1); color: var(--text-primary); }
     
     .confirm-btn-ok {
-        background: var(--soft-blue); border: none; color: #030816;
-        box-shadow: 0 4px 15px rgba(56,189,248,0.4);
+        background: linear-gradient(135deg, #3B5BDB, #5B7BFF); border: none; color: #fff;
+        box-shadow: 0 4px 15px rgba(67,97,238,0.45);
     }
-    .confirm-btn-ok:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(56,189,248,0.6); }
+    .confirm-btn-ok:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(91,123,255,0.60); }
 </style>
 
 <!-- Custom Confirm Modal -->
@@ -247,196 +309,167 @@
     </div>
 </div>
 
-<div class="nav-breadcrumb">
-    <a href="{% url 'admin:index' %}">Dashboard</a>
-    <span>/</span>
-    <span>Incident Details</span>
-    <span>/</span>
-    <span style="color:var(--text-secondary)">#{{ incident.id }}</span>
-</div>
+<!-- ═══ HERO HEADER CARD ═══ -->
+<div class="hero-card">
+    <!-- Breadcrumb -->
+    <div class="nav-breadcrumb" style="margin-bottom:16px;">
+        <a href="{% url 'admin:index' %}">Dashboard</a>
+        <span>/</span>
+        <span>Incident Details</span>
+        <span>/</span>
+        <span style="color:var(--text-secondary)">#{{ incident.id }}</span>
+    </div>
 
-<header class="header-section">
-    <div class="incident-title-block">
-        <h1>{{ incident.title }}</h1>
-        <div style="display:flex; gap:12px; align-items:center;">
-            <span class="tag-status">{{ incident.get_status_display }}</span>
-            <span style="color:var(--text-muted); font-size:0.85rem;">Ref: #{{ incident.id }}</span>
+    <!-- Title row -->
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:20px;">
+        <div>
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:6px;">
+                <span class="tag-status">{{ incident.get_status_display }}</span>
+                <span style="color:var(--text-muted); font-size:0.8rem; font-family:'JetBrains Mono',monospace;">Ref: #{{ incident.id }}</span>
+            </div>
+            <h1 style="margin:0; font-size:clamp(1.4rem,2.5vw,2rem); font-weight:800; color:#ffffff;">{{ incident.title }}</h1>
+        </div>
+        <a href="{% url 'admin:index' %}" class="light-button" style="min-height:40px; padding:0 20px; display:flex; align-items:center; flex-shrink:0; white-space:nowrap;">← Back to Dashboard</a>
+    </div>
+
+    <!-- Meta strip (5 columns) -->
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px;">
+        <div class="meta-pill">
+            <div class="meta-pill-label">Reporter</div>
+            <div class="meta-pill-value">{{ incident.reporter_display_name }}</div>
+            <div style="font-size:0.75rem; color:var(--soft-blue); margin-top:4px; word-break:break-all;">{{ incident.reporter_email|default:"Anonymous" }}</div>
+        </div>
+        <div class="meta-pill">
+            <div class="meta-pill-label">Category</div>
+            <div class="meta-pill-value" style="color:var(--soft-blue);">{{ incident.get_category_display }}</div>
+        </div>
+        <div class="meta-pill">
+            <div class="meta-pill-label">Incident Date</div>
+            <div class="meta-pill-value">{{ incident.incident_date }}</div>
+        </div>
+        <div class="meta-pill">
+            <div class="meta-pill-label">Time Logged</div>
+            <div class="meta-pill-value" style="font-family:'JetBrains Mono',monospace; font-size:0.85rem;">{{ incident.created_at|localtime|date:"Y-m-d H:i" }}</div>
         </div>
     </div>
-    <div style="display:flex; gap:12px;">
-        <a href="{% url 'admin:index' %}" class="light-button" style="min-height:44px; padding:0 24px; display:flex; align-items:center;">Back to Dashboard</a>
-    </div>
-</header>
-
-<div class="meta-grid">
-    <div class="meta-item">
-        <div class="label">Reporter</div>
-        <div class="value">{{ incident.reporter_display_name }}</div>
-    </div>
-    <div class="meta-item">
-        <div class="label">Category</div>
-        <div class="value" style="color:var(--soft-blue);">{{ incident.get_category_display }}</div>
-    </div>
-    <div class="meta-item">
-        <div class="label">Incident Date</div>
-        <div class="value">{{ incident.incident_date }}</div>
-    </div>
-    <div class="meta-item">
-        <div class="label">Time Logged</div>
-        <div class="value">{{ incident.created_at|localtime|date:"Y-m-d H:i" }}</div>
-    </div>
 </div>
 
+<!-- ═══ MAIN GRID ═══ -->
 <div class="grid-layout">
+    <!-- ── LEFT COLUMN ── -->
     <div class="main-column">
-        <!-- Description Section -->
+
+        <!-- Description -->
         <div class="premium-card">
             <h2 class="section-title"><span>📝</span> Description</h2>
-            <div style="color:var(--text-secondary); line-height:1.75; font-size:0.95rem; white-space:pre-wrap;">{{ incident.description }}</div>
+            <div style="color:var(--text-secondary); line-height:1.80; font-size:0.95rem; white-space:pre-wrap;">{{ incident.description }}</div>
         </div>
 
-        <!-- Reporter Details Card -->
-        <div class="premium-card">
-            <h2 class="section-title"><span>👤</span> Reporter Information</h2>
-            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:24px;">
-                <div>
-                    <div class="label" style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">Full Name or Handle</div>
-                    <div style="font-weight:600; color:var(--text-primary);">{{ incident.reporter_display_name }}</div>
-                </div>
-                <div>
-                    <div class="label" style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px;">Contact Email</div>
-                    <div style="color:var(--soft-blue); font-weight:500;">{{ incident.reporter_email|default:"Not Provided (Anonymous)" }}</div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Evidence Section -->
+        <!-- Evidence Files -->
         <div class="premium-card">
-            <h2 class="section-title"><span>📎</span> Evidence Files <span style="font-size:0.8rem; color:var(--text-muted); margin-left:8px;">({{ evidence_files|length }})</span></h2>
+            <h2 class="section-title">
+                <span>📎</span> Evidence Files
+                <span style="font-size:0.78rem; color:var(--text-muted); margin-left:6px; font-weight:500;">({{ evidence_files|length }})</span>
+            </h2>
             {% if evidence_files %}
                 <div class="evidence-list">
                     {% for evidence in evidence_files %}
                     <div class="evidence-item">
-                        <div style="width:40px; height:40px; border-radius:10px; background:rgba(56,189,248,0.1); display:flex; align-items:center; justify-content:center; margin-right:16px;">
-                            <span style="font-size:1.2rem;">📄</span>
+                        <div style="width:38px; height:38px; border-radius:10px; background:rgba(67,97,238,0.12); display:flex; align-items:center; justify-content:center; margin-right:14px; flex-shrink:0;">
+                            <span style="font-size:1.1rem;">📄</span>
                         </div>
-                        <div style="flex:1;">
-                            <div style="font-weight:600; font-size:0.9rem; color:var(--text-primary);">{{ evidence.display_name }}</div>
-                            <div style="font-size:0.75rem; color:var(--text-muted);">Uploaded on {{ evidence.created_at|localtime|date:"Y-m-d H:i" }}</div>
+                        <div style="flex:1; min-width:0;">
+                            <div style="font-weight:600; font-size:0.88rem; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ evidence.display_name }}</div>
+                            <div style="font-size:0.72rem; color:var(--text-muted); margin-top:2px;">Uploaded {{ evidence.created_at|localtime|date:"Y-m-d H:i" }}</div>
                         </div>
-                        <a href="{{ evidence.file.url }}" target="_blank" class="light-button" style="padding:6px 16px; font-size:0.8rem; min-height:unset;">View File</a>
+                        <a href="{{ evidence.file.url }}" target="_blank" class="light-button" style="padding:5px 14px; font-size:0.78rem; min-height:unset; flex-shrink:0;">View File</a>
                     </div>
                     {% endfor %}
                 </div>
             {% else %}
-                <div style="text-align:center; padding:40px; border:1px dashed var(--border-color); border-radius:16px; color:var(--text-muted);">
-                    No evidence files attached to this incident.
+                <div style="text-align:center; padding:36px; border:1px dashed rgba(67,97,238,0.22); border-radius:14px; color:var(--text-muted); font-size:0.875rem;">
+                    No evidence files attached.
                 </div>
             {% endif %}
         </div>
 
-        <!-- Comments Section -->
+        <!-- Comments & Notes -->
         <div class="premium-card">
-            <h2 class="section-title"><span>💬</span> Comments & Internal Notes <span style="font-size:0.8rem; color:var(--text-muted); margin-left:8px;">({{ comments|length }})</span></h2>
+            <h2 class="section-title">
+                <span>💬</span> Comments &amp; Internal Notes
+                <span style="font-size:0.78rem; color:var(--text-muted); margin-left:6px; font-weight:500;">({{ comments|length }})</span>
+            </h2>
             {% if comments %}
-                <div style="display:flex; flex-direction:column;">
+                <div style="display:flex; flex-direction:column; gap:4px;">
                     {% for comment in comments %}
                     <div class="comment-item {% if comment.is_admin_note %}admin-note{% endif %}">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                             <div style="display:flex; align-items:center; gap:8px;">
                                 <strong style="color:var(--text-primary); font-size:0.85rem;">{{ comment.created_by.username|default:"Unknown" }}</strong>
-                                {% if comment.is_admin_note %}<span style="font-size:9px; color:var(--certificate-green); text-transform:uppercase; font-weight:800; border:1px solid var(--certificate-green); padding:1px 5px; border-radius:4px;">Staff Note</span>{% endif %}
+                                {% if comment.is_admin_note %}<span style="font-size:9px; color:#7090FF; text-transform:uppercase; font-weight:800; background:rgba(67,97,238,0.14); border:1px solid rgba(91,123,255,0.35); padding:2px 7px; border-radius:5px;">Staff Note</span>{% endif %}
                             </div>
-                            <span style="font-size:0.72rem; color:var(--text-muted);">{{ comment.created_at|localtime|date:"Y-m-d H:i" }}</span>
+                            <span style="font-size:0.72rem; color:var(--text-muted); white-space:nowrap;">{{ comment.created_at|localtime|date:"Y-m-d H:i" }}</span>
                         </div>
                         <div style="color:var(--text-secondary); font-size:0.875rem; line-height:1.6;">{{ comment.comment }}</div>
                     </div>
                     {% endfor %}
                 </div>
             {% else %}
-                <div style="text-align:center; padding:32px; color:var(--text-muted); border:1px dashed var(--border-color); border-radius:12px;">
+                <div style="text-align:center; padding:28px; color:var(--text-muted); border:1px dashed rgba(67,97,238,0.22); border-radius:12px; font-size:0.875rem;">
                     No comments yet.
                 </div>
             {% endif %}
         </div>
 
-        <!-- Audit Log Section -->
+        <!-- Audit Trail -->
         <div class="premium-card" style="margin-bottom:0;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
                 <h2 class="section-title" style="margin-bottom:0;"><span>📋</span> Audit Trail</h2>
-                <button id="audit-toggle" class="light-button" onclick="toggleAuditLog()" style="padding:4px 12px; font-size:0.75rem; min-height:30px;">Show History</button>
+                <button id="audit-toggle" class="light-button" onclick="toggleAuditLog()" style="padding:4px 12px; font-size:0.75rem; min-height:28px;">Show History</button>
             </div>
-            
             <div id="audit-body" style="max-height:200px; overflow:hidden; position:relative; transition:max-height 0.4s ease-in-out;">
-                <div id="audit-fade" style="position:absolute; bottom:0; left:0; right:0; height:60px; background:linear-gradient(to bottom, transparent, rgba(3,8,22,0.95)); pointer-events:none; transition:opacity 0.3s;"></div>
+                <div id="audit-fade" style="position:absolute; bottom:0; left:0; right:0; height:60px; background:linear-gradient(to bottom, transparent, rgba(3,6,26,0.98)); pointer-events:none; transition:opacity 0.3s;"></div>
                 <div id="audit-scroll" style="display:flex; flex-direction:column;">
                     {% for log in audit_logs %}
-                    <div style="padding:16px 0; border-bottom:1px solid rgba(56,189,248,0.05); display:flex; gap:16px;">
-                        <span style="width:110px; font-size:0.75rem; color:var(--text-muted); flex-shrink:0;">{{ log.created_at|localtime|date:"Y-m-d H:i" }}</span>
+                    <div style="padding:14px 0; border-bottom:1px solid rgba(67,97,238,0.08); display:flex; gap:14px;">
+                        <span style="width:105px; font-size:0.72rem; color:var(--text-muted); flex-shrink:0; font-family:'JetBrains Mono',monospace;">{{ log.created_at|localtime|date:"Y-m-d H:i" }}</span>
                         <div style="flex:1;">
-                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-                                <span style="font-size:0.68rem; font-weight:800; color:var(--certificate-green); text-transform:uppercase; background:rgba(0,232,122,0.08); padding:2px 8px; border-radius:10px;">{{ log.get_action_display }}</span>
-                                <span style="font-size:0.8rem; color:var(--text-secondary);">by {{ log.user.username|default:"System" }}</span>
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:3px;">
+                                <span style="font-size:0.65rem; font-weight:800; color:#7090FF; text-transform:uppercase; background:rgba(67,97,238,0.14); padding:2px 8px; border-radius:10px; border:1px solid rgba(91,123,255,0.28);">{{ log.get_action_display }}</span>
+                                <span style="font-size:0.78rem; color:var(--text-secondary);">by {{ log.user.username|default:"System" }}</span>
                             </div>
-                            {% if log.message %}<div style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;">{{ log.message }}</div>{% endif %}
+                            {% if log.message %}<div style="font-size:0.82rem; color:var(--text-muted); margin-top:3px;">{{ log.message }}</div>{% endif %}
                         </div>
                     </div>
                     {% endfor %}
                 </div>
             </div>
         </div>
-    </div>
+    </div><!-- /main-column -->
 
-    <!-- Sidebar Column -->
+    <!-- ── RIGHT SIDEBAR ── -->
     <aside class="sidebar-column">
-        <div class="sidebar-block">
-            <h3><span>⚖️</span> Incident Actions</h3>
-            <form method="post" action="{% url 'admin:incident_status' incident.id %}">
-                {% csrf_token %}
-                <div style="margin-bottom:16px;">
-                    <label style="display:block; font-size:0.72rem; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; font-weight:700;">Update Status</label>
-                    {{ status_form.status }}
-                </div>
-                <button type="submit" class="primary-button" style="width:100%;">Apply Changes</button>
-            </form>
-            <hr style="margin:20px 0; border:0; border-top:1px solid var(--border-color);">
-            <form method="post" action="{% url 'admin:incident_category' incident.id %}">
-                {% csrf_token %}
-                <div style="margin-bottom:16px;">
-                    <label style="display:block; font-size:0.72rem; color:var(--text-muted); margin-bottom:8px; text-transform:uppercase; font-weight:700;">Update Category</label>
-                    {{ category_form.category }}
-                </div>
-                <button type="submit" class="light-button" style="width:100%;">Apply Changes</button>
-            </form>
-        </div>
 
-        <div class="sidebar-block" style="border-left:4px solid var(--certificate-green);">
-            <h3><span>📝</span> Add Staff Note</h3>
-            <form method="post" action="{% url 'admin:incident_comment' incident.id %}">
-                {% csrf_token %}
-                <div style="margin-bottom:12px;">{{ comment_form.comment }}</div>
-                <button type="submit" class="primary-button" style="width:100%; height:44px; background:linear-gradient(135deg, var(--certificate-green), #00C563); color:#031408; font-weight:700;">Add Note</button>
-            </form>
-        </div>
 
-        <div class="sidebar-block" style="border-left:4px solid var(--soft-blue);">
-            <h3><span>📧</span> Notifications</h3>
+        <div class="sidebar-block" style="border-left:4px solid rgba(96,165,250,0.55);">
+            <h3 style="margin-bottom:14px; font-size:0.95rem;"><span>📧</span> Notifications</h3>
             {% with recipient=incident.recipient_email %}
             {% if recipient %}
-                <p style="font-size:0.72rem; color:var(--text-muted); margin-bottom:16px; display:flex; justify-content:space-between;">
+                <p style="font-size:0.72rem; color:var(--text-muted); margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
                     <span>Recipient:</span>
-                    <span style="color:var(--soft-blue); font-weight:600;">{{ recipient }}</span>
+                    <span style="color:var(--soft-blue); font-weight:600; font-size:0.78rem; word-break:break-all;">{{ recipient }}</span>
                 </p>
                 <div style="display:flex; flex-direction:column; gap:8px;">
                     <form method="post" action="{% url 'admin:incident_resend_email' incident.id %}" onsubmit="return handleResend(this, 'Resend Submission Receipt?', 'This will resend the initial report confirmation to {{ recipient }}.');">
                         {% csrf_token %}
                         <input type="hidden" name="notification_type" value="submission">
-                        <button type="submit" class="light-button" style="width:100%; font-size:0.78rem; text-align:center;">Resend Receipt</button>
+                        <button type="submit" class="light-button" style="width:100%; font-size:0.78rem; text-align:center; height:38px;">Resend Receipt</button>
                     </form>
                     <form method="post" action="{% url 'admin:incident_resend_email' incident.id %}" onsubmit="return handleResend(this, 'Resend Status Notice?', 'This will notify {{ recipient }} that the status is now [{{ incident.get_status_display }}].');">
                         {% csrf_token %}
                         <input type="hidden" name="notification_type" value="status">
-                        <button type="submit" class="light-button" style="width:100%; font-size:0.78rem; text-align:center;">Resend Status Notice</button>
+                        <button type="submit" class="light-button" style="width:100%; font-size:0.78rem; text-align:center; height:38px;">Resend Status Notice</button>
                     </form>
                 </div>
             {% else %}
@@ -446,8 +479,47 @@
             {% endif %}
             {% endwith %}
         </div>
+
+        <!-- Incident Actions -->
+        <div class="sidebar-block" style="border-top:3px solid var(--accent-blue);">
+            <h3 style="margin-bottom:18px; font-size:0.95rem;"><span>⚙️</span> Incident Actions</h3>
+
+            <!-- Status update -->
+            <form method="post" action="{% url 'admin:incident_status' incident.id %}">
+                {% csrf_token %}
+                <div class="action-field-group">
+                    <label class="action-label">Update Status</label>
+                    {{ status_form.status }}
+                    <button type="submit" class="primary-button" style="width:100%; margin-top:10px; height:40px; font-size:0.82rem;">Apply Status</button>
+                </div>
+            </form>
+
+            <div style="height:1px; background:rgba(67,97,238,0.14); margin:18px 0;"></div>
+
+            <!-- Category update -->
+            <form method="post" action="{% url 'admin:incident_category' incident.id %}">
+                {% csrf_token %}
+                <div class="action-field-group">
+                    <label class="action-label">Update Category</label>
+                    {{ category_form.category }}
+                    <button type="submit" class="light-button" style="width:100%; margin-top:10px; height:40px; font-size:0.82rem;">Apply Category</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Add Staff Note -->
+        <div class="sidebar-block" style="border-left:4px solid #4361EE; background:rgba(67,97,238,0.06);">
+            <h3 style="color:#8AA9FF; margin-bottom:14px; font-size:0.95rem;"><span>📝</span> Add Staff Note</h3>
+            <form method="post" action="{% url 'admin:incident_comment' incident.id %}">
+                {% csrf_token %}
+                <div style="margin-bottom:10px;">{{ comment_form.comment }}</div>
+                <button type="submit" class="primary-button" style="width:100%; height:40px; font-size:0.82rem;">Add Note</button>
+            </form>
+        </div>
+
     </aside>
-</div>
+</div><!-- /grid-layout -->
+
 
 <script>
 let confirmPromiseResolve;

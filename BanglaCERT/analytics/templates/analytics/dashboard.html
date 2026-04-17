@@ -6,33 +6,33 @@
 <h1>Incident Analytics Dashboard</h1>
 <p class="muted">This dashboard summarizes reported incidents and highlights common attack types and incident frequency.</p>
 
-<section class="row" style="margin-bottom: 24px;">
-    <div class="col" style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px;">
-        <p class="muted" style="margin-top: 0;">Total Incidents</p>
+<section class="metric-grid">
+    <div class="metric-card">
+        <p class="metric-label">Total Incidents</p>
         <h2 style="margin: 0;">{{ total_incidents }}</h2>
     </div>
-    <div class="col" style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px;">
-        <p class="muted" style="margin-top: 0;">Verified Incidents</p>
+    <div class="metric-card">
+        <p class="metric-label">Verified Incidents</p>
         <h2 style="margin: 0;">{{ verified_incidents }}</h2>
     </div>
-    <div class="col" style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px;">
-        <p class="muted" style="margin-top: 0;">Public Awareness Posts</p>
+    <div class="metric-card">
+        <p class="metric-label">Public Awareness Posts</p>
         <h2 style="margin: 0;">{{ public_posts }}</h2>
     </div>
-    <div class="col" style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px;">
-        <p class="muted" style="margin-top: 0;">Most Common Attack</p>
+    <div class="metric-card">
+        <p class="metric-label">Most Common Attack</p>
         <h2 style="margin: 0;">{{ most_common_type }}</h2>
     </div>
 </section>
 
-<section style="margin-bottom: 28px;">
+<section class="chart-panel">
     <h2>Attack Type Chart</h2>
     {% if category_breakdown %}
         {% for item in category_breakdown %}
-            <div style="display: grid; grid-template-columns: 160px 1fr 40px; gap: 12px; align-items: center; margin-bottom: 12px;">
-                <strong>{{ item.label }}</strong>
-                <div style="background: #e5e7eb; border-radius: 999px; height: 14px; overflow: hidden;">
-                    <div style="background: #0f172a; width: {{ item.width }}%; height: 14px;"></div>
+            <div class="bar-row">
+                <strong class="bar-label">{{ item.label }}</strong>
+                <div class="bar-track">
+                    <div class="bar-fill" style="--w: {{ item.width }}%; width: var(--w);"></div>
                 </div>
                 <span>{{ item.count }}</span>
             </div>
@@ -45,7 +45,7 @@
 <section>
     <h2>Incident Frequency Graph</h2>
     {% if frequency_points %}
-        <div style="border: 1px solid rgba(56,189,248,0.18); border-radius: 16px; padding: 20px; background: linear-gradient(160deg, #1A2A48 0%, #111E35 100%);">
+        <div class="trend-shell">
             <svg viewBox="-30 -5 340 160" width="100%" height="200" role="img" aria-label="Incident frequency trend line" style="overflow:visible; display:block;">
                 <defs>
                         <!-- Subtle grid line style -->
@@ -134,14 +134,14 @@
                 {% endfor %}
             </svg>
 
-            <div style="display: grid; grid-template-columns: repeat({{ frequency_points|length }}, minmax(0, 1fr)); gap: 8px; align-items: end;">
+            <div class="trend-grid" style="--cols: {{ frequency_points|length }}; grid-template-columns: repeat(var(--cols), minmax(0, 1fr));">
                 {% for point in frequency_points %}
-                    <div style="text-align: center;">
-                        <div style="height: 130px; display: flex; align-items: end; justify-content: center; margin-bottom: 8px;">
-                            <div style="width: 28px; background: linear-gradient(180deg, #38BDF8, rgba(56,189,248,0.4)); border-radius: 6px 6px 0 0; height: {{ point.height }}px; box-shadow: 0 0 10px rgba(56,189,248,0.35);"></div>
+                    <div class="trend-column">
+                        <div class="trend-bar-wrap">
+                            <div class="trend-bar" style="--h: {{ point.height }}px; height: var(--h);"></div>
                         </div>
                         <strong style="display: block; color: #C8D9EE; font-size: 0.875rem;">{{ point.count }}</strong>
-                        <span style="font-size: 11px; color: #7A93B4;">{{ point.label }}</span>
+                        <span class="muted" style="font-size: 11px;">{{ point.label }}</span>
                     </div>
                 {% endfor %}
             </div>

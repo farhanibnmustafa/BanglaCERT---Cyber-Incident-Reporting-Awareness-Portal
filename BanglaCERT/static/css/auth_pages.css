@@ -1,22 +1,23 @@
 /* =============================================
    BANGLA CERT — AUTH PAGES (Login / Register)
-   DOTDNA Midnight Navy-Blue Cybersecurity Theme
+   Royal Blue / Deep Black Modern SaaS Theme
 ============================================= */
 
 /* Fonts loaded via base template */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800;900&display=swap');
 
 :root {
-    --auth-bg-void:    #080E1C;
-    --auth-bg-deep:    #0B1220;
-    --auth-bg-card:    #112038;
-    --auth-bg-input:   rgba(8,14,28,0.85);
-    --auth-accent-g:   #00E87A;
-    --auth-accent-c:   #38BDF8;
-    --auth-text:       #C8D9EE;
-    --auth-muted:      #7A93B4;
-    --auth-border:     rgba(56,189,248,0.18);
-    --auth-border-g:   rgba(0,232,122,0.22);
+    --auth-bg-void:    #03061A;
+    --auth-bg-deep:    #05091E;
+    --auth-bg-card:    #0E1840;
+    --auth-bg-input:   rgba(4,7,28,0.88);
+    --auth-accent-b:   #4361EE;
+    --auth-accent-b2:  #5B7BFF;
+    --auth-accent-c:   #8AA9FF; /* Remapped to light blue */
+    --auth-text:       #E8EFFE;
+    --auth-muted:      #7D9AC8;
+    --auth-border:     rgba(67,97,238,0.22);
+    --auth-border-b:   rgba(91,123,255,0.30);
     --auth-danger:     #F87171;
 }
 
@@ -32,9 +33,9 @@ body.auth-page {
     min-height: 100dvh;
     background-color: var(--auth-bg-deep);
     background-image:
-        radial-gradient(ellipse 80% 50% at 50% -5%,  rgba(56,189,248,0.12) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(0,232,122,0.07) 0%, transparent 50%),
-        radial-gradient(ellipse 50% 40% at 0% 80%,   rgba(129,140,248,0.06) 0%, transparent 50%);
+        radial-gradient(ellipse 90% 55% at 50% -8%,  rgba(67,97,238,0.28) 0%, transparent 56%),
+        radial-gradient(ellipse 60% 45% at 100% 95%, rgba(59,91,219,0.16) 0%, transparent 55%),
+        radial-gradient(ellipse 55% 40% at 0% 80%,   rgba(67,97,238,0.12) 0%, transparent 50%);
     color: var(--auth-text);
     font-family: 'Inter', 'Outfit', system-ui, sans-serif;
     position: relative;
@@ -47,9 +48,9 @@ body.auth-page::before {
     inset: 0;
     pointer-events: none;
     z-index: 0;
-    background-image: radial-gradient(circle, rgba(56,189,248,0.18) 1px, transparent 1px);
+    background-image: radial-gradient(circle, rgba(67,97,238,0.22) 1px, transparent 1px);
     background-size: 30px 30px;
-    mask-image: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.1) 70%, transparent 100%);
+    mask-image: linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.08) 70%, transparent 100%);
 }
 
 /* ===================== HERO HEADER ===================== */
@@ -66,13 +67,13 @@ body.auth-page::before {
     position: absolute;
     inset: 0;
     background: linear-gradient(135deg,
-        rgba(8,14,28,0.82) 0%,
-        rgba(11,18,32,0.65) 50%,
-        rgba(8,14,28,0.75) 100%);
+        rgba(3,6,26,0.88) 0%,
+        rgba(5,9,30,0.70) 50%,
+        rgba(3,6,26,0.82) 100%);
     z-index: 1;
 }
 
-/* Neon scan-line effect on hero */
+/* Royal blue scan-line effect on hero */
 .auth-hero::after {
     content: '';
     position: absolute;
@@ -82,8 +83,8 @@ body.auth-page::before {
         0deg,
         transparent,
         transparent 2px,
-        rgba(0,232,122,0.025) 2px,
-        rgba(0,232,122,0.025) 4px
+        rgba(67,97,238,0.040) 2px,
+        rgba(67,97,238,0.040) 4px
     );
     pointer-events: none;
 }
@@ -106,7 +107,7 @@ body.auth-page::before {
     width: 220px;
     max-width: 46vw;
     height: auto;
-    filter: drop-shadow(0 2px 16px rgba(0,232,122,0.50));
+    filter: drop-shadow(0 2px 18px rgba(67,97,238,0.55));
 }
 
 .brand-subtitle {
@@ -115,7 +116,7 @@ body.auth-page::before {
     font-size: 11px;
     line-height: 1.3;
     font-weight: 600;
-    color: rgba(200,217,238,0.85);
+    color: rgba(200,218,255,0.85);
     text-shadow: 0 1px 4px rgba(0,0,0,0.6);
     letter-spacing: 0.04em;
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
@@ -140,24 +141,24 @@ body.auth-page::before {
 
 /* ===================== CARD ===================== */
 .auth-card {
-    background: linear-gradient(160deg, rgba(17,32,56,0.95) 0%, rgba(11,18,32,0.98) 100%);
+    background: linear-gradient(160deg, rgba(14,24,64,0.96) 0%, rgba(5,9,30,0.99) 100%);
     border: 1px solid var(--auth-border);
     border-radius: 18px;
     box-shadow:
-        0 24px 60px rgba(4,10,22,0.65),
-        inset 0 1px 0 rgba(56,189,248,0.08);
+        0 24px 60px rgba(2,4,18,0.70),
+        inset 0 1px 0 rgba(67,97,238,0.10);
     overflow: hidden;
-    backdrop-filter: blur(16px);
+    backdrop-filter: blur(20px);
     position: relative;
 }
 
-/* Top accent bar */
+/* Top accent bar — royal blue */
 .auth-card::before {
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0;
     height: 2px;
-    background: linear-gradient(90deg, var(--auth-accent-g), var(--auth-accent-c) 60%, transparent);
+    background: linear-gradient(90deg, var(--auth-accent-b), var(--auth-accent-c) 60%, transparent);
     border-radius: 18px 18px 0 0;
 }
 
@@ -175,7 +176,7 @@ body.auth-page::before {
     font-weight: 800;
     letter-spacing: 0.01em;
     text-align: center;
-    background: linear-gradient(135deg, #D6E8FF 0%, #38BDF8 50%, #00E87A 100%);
+    background: linear-gradient(135deg, #FFFFFF 0%, #8AA9FF 45%, #4361EE 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -209,9 +210,9 @@ body.auth-page::before {
 }
 
 .auth-flash {
-    background: rgba(56,189,248,0.10);
-    border: 1px solid rgba(56,189,248,0.28);
-    color: #93C5FD;
+    background: rgba(67,97,238,0.12);
+    border: 1px solid rgba(67,97,238,0.30);
+    color: #8AA9FF;
 }
 
 .auth-errors {
@@ -234,6 +235,8 @@ body.auth-page::before {
     padding: 3px 8px;
     border-radius: 5px;
     display: inline-block;
+    background: rgba(67,97,238,0.10);
+    color: var(--auth-muted);
 }
 
 .auth-field input[type="text"],
@@ -241,7 +244,7 @@ body.auth-page::before {
 .auth-field input[type="password"] {
     width: 100%;
     height: 46px;
-    border: 1px solid rgba(56,189,248,0.18);
+    border: 1px solid rgba(67,97,238,0.22);
     border-radius: 10px;
     background: var(--auth-bg-input);
     padding: 0 16px;
@@ -252,11 +255,11 @@ body.auth-page::before {
     font-family: inherit;
 }
 
-.auth-field input::placeholder { color: rgba(122,147,180,0.45); }
+.auth-field input::placeholder { color: rgba(125,154,200,0.45); }
 
 .auth-field input:focus {
-    border-color: rgba(0,232,122,0.50);
-    box-shadow: 0 0 0 3px rgba(0,232,122,0.12);
+    border-color: rgba(67,97,238,0.65);
+    box-shadow: 0 0 0 3px rgba(67,97,238,0.16);
 }
 
 .field-error {
@@ -268,7 +271,7 @@ body.auth-page::before {
 .field-help {
     margin-top: 5px;
     font-size: 12px;
-    color: rgba(122,147,180,0.70);
+    color: rgba(125,154,200,0.70);
 }
 
 /* ===================== AUTH ROW (passwords) ===================== */
@@ -299,24 +302,24 @@ body.auth-page::before {
 }
 
 .auth-btn-blue {
-    background: linear-gradient(135deg, #1A6BD6 0%, #1458B0 55%, #0F4289 100%);
-    box-shadow: 0 8px 24px rgba(26,107,214,0.35);
+    background: linear-gradient(135deg, #3B5BDB 0%, #4361EE 50%, #5B7BFF 100%);
+    box-shadow: 0 8px 24px rgba(67,97,238,0.42);
 }
 .auth-btn-blue:hover {
-    filter: brightness(1.1);
+    filter: brightness(1.12);
     transform: translateY(-1px);
-    box-shadow: 0 12px 32px rgba(26,107,214,0.50);
+    box-shadow: 0 12px 32px rgba(91,123,255,0.58);
     color: #fff;
 }
 
 .auth-btn-green {
-    background: linear-gradient(135deg, #00C76A 0%, #00A356 60%, #007A40 100%);
-    box-shadow: 0 8px 24px rgba(0,232,122,0.28);
+    background: linear-gradient(135deg, #3B5BDB 0%, #4361EE 55%, #5B7BFF 100%);
+    box-shadow: 0 8px 24px rgba(67,97,238,0.38);
 }
 .auth-btn-green:hover {
-    filter: brightness(1.1);
+    filter: brightness(1.12);
     transform: translateY(-1px);
-    box-shadow: 0 12px 32px rgba(0,232,122,0.42);
+    box-shadow: 0 12px 32px rgba(91,123,255,0.55);
     color: #fff;
 }
 
@@ -339,15 +342,15 @@ body.auth-page::before {
     font-weight: 600;
     transition: color 0.2s;
 }
-.aux-link:hover { color: var(--auth-accent-g); }
+.aux-link:hover { color: #BACCFF; }
 
 /* ===================== ANON BOX ===================== */
 .anon-box {
     margin-top: 14px;
-    border: 1px solid rgba(56,189,248,0.18);
+    border: 1px solid rgba(67,97,238,0.22);
     border-radius: 12px;
     padding: 12px 16px;
-    background: rgba(17,32,56,0.72);
+    background: rgba(14,24,64,0.72);
     display: grid;
     grid-template-columns: 1fr auto;
     gap: 10px;
@@ -368,14 +371,14 @@ body.auth-page::before {
 
 /* ===================== CARD FOOTER ===================== */
 .auth-card-footer {
-    border-top: 1px solid rgba(56,189,248,0.12);
+    border-top: 1px solid rgba(67,97,238,0.14);
     padding: 14px 18px;
     text-align: center;
     color: var(--auth-muted);
     font-size: 14px;
 }
 .auth-card-footer a {
-    color: var(--auth-accent-g);
+    color: var(--auth-accent-b2);
     font-weight: 700;
     text-decoration: none;
     transition: color 0.2s;
@@ -386,7 +389,7 @@ body.auth-page::before {
 .auth-note {
     text-align: center;
     margin-top: 10px;
-    color: rgba(122,147,180,0.55);
+    color: rgba(125,154,200,0.55);
     font-size: 12px;
 }
 

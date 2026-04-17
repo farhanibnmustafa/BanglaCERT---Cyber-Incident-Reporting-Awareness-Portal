@@ -19,11 +19,11 @@
             </span>
         </div>
         <p class="muted" style="font-size:0.875rem; margin:0;">
-            Reported by: <strong style="color:#C8D9EE;">{{ incident.created_by.username|default:"Unknown" }}</strong>
+            Reported by: <strong style="color:#E8EFFE;">{{ incident.created_by.username|default:"Unknown" }}</strong>
         </p>
     </div>
 
-    <div class="panel" style="margin-top:20px; background:rgba(11,18,32,0.60);">
+    <div class="panel" style="margin-top:20px; background:var(--bg-surface); border-color:var(--border-subtle);">
         <h2 style="font-size:1rem; margin-bottom:10px;">Description</h2>
         <p style="margin:0; color:#A8BDD6; line-height:1.75; white-space:pre-wrap;">{{ incident.description|linebreaksbr }}</p>
     </div>
@@ -43,24 +43,24 @@
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            background: linear-gradient(135deg, rgba(56, 189, 248, 0.1) 0%, rgba(56, 189, 248, 0.05) 100%);
-            border: 1px solid rgba(56, 189, 248, 0.4);
-            color: #38BDF8;
-            padding: 10px 20px;
+            background: linear-gradient(135deg, rgba(67,97,238,0.14) 0%, rgba(67,97,238,0.07) 100%);
+            border: 1px solid rgba(91,123,255,0.40);
+            color: #8AA9FF;
+            padding: 10px 22px;
             border-radius: 12px;
             font-size: 14px;
             font-weight: 700;
             text-decoration: none;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-transform: uppercase;
-            letter-spacing: 0.03em;
-            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.1);
+            letter-spacing: 0.04em;
+            box-shadow: 0 4px 16px rgba(67,97,238,0.18);
         }
 
         .cyber-btn-edit:hover {
-            background: rgba(56, 189, 248, 0.2);
-            border-color: #38BDF8;
-            box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+            background: rgba(67,97,238,0.24);
+            border-color: #5B7BFF;
+            box-shadow: 0 0 24px rgba(67,97,238,0.38);
             transform: translateY(-2px);
             color: #fff;
         }
@@ -117,7 +117,7 @@
                             <td style="color:#A8BDD6; line-height:1.6;">{{ item.comment|linebreaksbr }}</td>
                             <td>
                                 {% if item.is_admin_note %}
-                                    <span class="tag" style="background:rgba(129,140,248,0.12); border-color:rgba(129,140,248,0.30); color:#818CF8;">Admin Note</span>
+                                    <span class="tag" style="background:rgba(67,97,238,0.15); border-color:rgba(91,123,255,0.35); color:#7090FF;">Admin Note</span>
                                 {% else %}
                                     <span class="tag">Comment</span>
                                 {% endif %}

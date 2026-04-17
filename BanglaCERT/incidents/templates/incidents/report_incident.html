@@ -55,18 +55,18 @@
             <!-- Drop Zone -->
             <div id="drop-zone"
                  style="
-                    border: 2px dashed rgba(56,189,248,0.35);
+                    border: 2px dashed var(--border-blue);
                     border-radius: 14px;
                     padding: 32px 20px;
                     text-align: center;
-                    background: rgba(11,18,32,0.60);
+                    background: var(--bg-surface);
                     cursor: pointer;
-                    transition: border-color 0.2s ease, background 0.2s ease;
+                    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
                  "
                  onclick="document.getElementById('{{ form.evidence_files.id_for_label }}').click()">
 
                 <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24"
-                     fill="none" stroke="rgba(56,189,248,0.60)" stroke-width="1.5"
+                     fill="none" stroke="var(--accent-blue-light)" stroke-width="1.5"
                      stroke-linecap="round" stroke-linejoin="round"
                      style="margin-bottom:12px; display:block; margin-left:auto; margin-right:auto;">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -78,7 +78,7 @@
                     Drag &amp; drop files here
                 </p>
                 <p style="margin:0; color:#7A93B4; font-size:0.82rem;">
-                    or <span style="color:#38BDF8; font-weight:700;">browse to select</span>
+                    or <span style="color:var(--accent-blue-light); font-weight:700;">browse to select</span>
                 </p>
                 <p style="margin:8px 0 0; color:#4A6480; font-size:0.75rem; letter-spacing:0.05em;">
                     PNG · JPG · PDF &nbsp;|&nbsp; Max 5 MB per file
@@ -104,17 +104,18 @@
 
 <style>
 #drop-zone.drag-over {
-    border-color: rgba(56,189,248,0.80);
-    background: rgba(56,189,248,0.08);
+    border-color: var(--accent-blue-bright);
+    background: rgba(67,97,238,0.12);
+    box-shadow: var(--glow-blue);
 }
 .file-item {
     display: flex;
     align-items: center;
     gap: 10px;
     padding: 9px 14px;
-    border: 1px solid rgba(56,189,248,0.18);
+    border: 1px solid var(--border-blue);
     border-radius: 10px;
-    background: rgba(17,32,56,0.70);
+    background: var(--bg-surface);
     font-size: 0.85rem;
     color: #C8D9EE;
     animation: rise-in 0.2s ease both;

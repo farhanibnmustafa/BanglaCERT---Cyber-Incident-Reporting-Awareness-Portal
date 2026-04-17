@@ -43,8 +43,8 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-only-change-me")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DEBUG", "True").lower() == "true"
 
-ALLOWED_HOSTS = ['*'] # In final prod, replace with your specific .vercel.app domain
-CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app']
+ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "*").split(",")
+CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "https://*.vercel.app").split(",")
 
 
 # Application definition

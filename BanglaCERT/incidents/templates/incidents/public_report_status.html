@@ -40,7 +40,7 @@
 </div>
 
 {% if incident %}
-<div class="section-block" style="border-color:rgba(0,232,122,0.22); background:linear-gradient(160deg, rgba(10,26,18,0.88) 0%, rgba(8,18,14,0.95) 100%);">
+<div class="section-block" style="border-color:rgba(67,97,238,0.30); background:linear-gradient(160deg, rgba(8,12,38,0.90) 0%, rgba(4,7,22,0.96) 100%);">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
         <h2 style="margin-bottom:0;">{{ incident.title }}</h2>
         {% if incident.status != 'VERIFIED' and incident.status != 'REJECTED' and incident.status != 'CLOSED' %}
@@ -56,9 +56,9 @@
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            background: linear-gradient(135deg, rgba(56, 189, 248, 0.1) 0%, rgba(56, 189, 248, 0.05) 100%);
-            border: 1px solid rgba(56, 189, 248, 0.4);
-            color: #38BDF8;
+            background: linear-gradient(135deg, rgba(67,97,238,0.14) 0%, rgba(67,97,238,0.07) 100%);
+            border: 1px solid rgba(91,123,255,0.40);
+            color: #8AA9FF;
             padding: 8px 18px;
             border-radius: 10px;
             font-size: 13px;
@@ -66,53 +66,46 @@
             text-decoration: none;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-transform: uppercase;
-            letter-spacing: 0.03em;
-            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.1);
+            letter-spacing: 0.04em;
+            box-shadow: 0 4px 16px rgba(67,97,238,0.18);
         }
-
         .cyber-btn-edit:hover {
-            background: rgba(56, 189, 248, 0.2);
-            border-color: #38BDF8;
-            box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+            background: rgba(67,97,238,0.24);
+            border-color: #5B7BFF;
+            box-shadow: 0 0 24px rgba(67,97,238,0.38);
             transform: translateY(-2px);
             color: #fff;
         }
-
-        .btn-icon {
-            transition: transform 0.3s ease;
-        }
-
-        .cyber-btn-edit:hover .btn-icon {
-            transform: rotate(-10deg) scale(1.1);
-        }
+        .btn-icon { transition: transform 0.3s ease; }
+        .cyber-btn-edit:hover .btn-icon { transform: rotate(-10deg) scale(1.1); }
     </style>
 
     <div style="display:grid; gap:10px; max-width:520px;">
-        <div class="panel" style="background:rgba(11,18,32,0.60); padding:12px 16px;">
+        <div class="panel" style="background:rgba(6,11,34,0.70); border:1px solid rgba(67,97,238,0.18); padding:12px 16px;">
             <div style="display:grid; grid-template-columns:130px 1fr; gap:8px; align-items:baseline;">
                 <span class="muted" style="font-size:0.8rem; font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:0.1em;">Status</span>
                 <span class="tag">{{ incident.get_status_display }}</span>
             </div>
         </div>
-        <div class="panel" style="background:rgba(11,18,32,0.60); padding:12px 16px;">
+        <div class="panel" style="background:rgba(6,11,34,0.70); border:1px solid rgba(67,97,238,0.18); padding:12px 16px;">
             <div style="display:grid; grid-template-columns:130px 1fr; gap:8px; align-items:baseline;">
                 <span class="muted" style="font-size:0.8rem; font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:0.1em;">Category</span>
-                <span style="color:#C8D9EE; font-size:0.9rem;">{{ incident.get_category_display }}</span>
+                <span style="color:#E8EFFE; font-size:0.9rem;">{{ incident.get_category_display }}</span>
             </div>
         </div>
-        <div class="panel" style="background:rgba(11,18,32,0.60); padding:12px 16px;">
+        <div class="panel" style="background:rgba(6,11,34,0.70); border:1px solid rgba(67,97,238,0.18); padding:12px 16px;">
             <div style="display:grid; grid-template-columns:130px 1fr; gap:8px; align-items:baseline;">
                 <span class="muted" style="font-size:0.8rem; font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:0.1em;">Incident Date</span>
                 <span style="color:#C8D9EE; font-family:'JetBrains Mono',monospace; font-size:0.875rem;">{{ incident.incident_date|date:"Y-m-d" }}</span>
             </div>
         </div>
-        <div class="panel" style="background:rgba(11,18,32,0.60); padding:12px 16px;">
+        <div class="panel" style="background:rgba(6,11,34,0.70); border:1px solid rgba(67,97,238,0.18); padding:12px 16px;">
             <div style="display:grid; grid-template-columns:130px 1fr; gap:8px; align-items:baseline;">
                 <span class="muted" style="font-size:0.8rem; font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:0.1em;">Submitted</span>
                 <span style="color:#7A93B4; font-family:'JetBrains Mono',monospace; font-size:0.8rem;">{{ incident.created_at|date:"Y-m-d H:i" }}</span>
             </div>
         </div>
-        <div class="panel" style="background:rgba(11,18,32,0.60); padding:12px 16px;">
+        <div class="panel" style="background:rgba(6,11,34,0.70); border:1px solid rgba(67,97,238,0.18); padding:12px 16px;">
             <div style="display:grid; grid-template-columns:130px 1fr; gap:8px; align-items:baseline;">
                 <span class="muted" style="font-size:0.8rem; font-family:'JetBrains Mono',monospace; text-transform:uppercase; letter-spacing:0.1em;">Last Updated</span>
                 <span style="color:#7A93B4; font-family:'JetBrains Mono',monospace; font-size:0.8rem;">{{ incident.updated_at|date:"Y-m-d H:i" }}</span>
@@ -121,24 +114,24 @@
     </div>
 
     {% if incident.reporter_email %}
-        <p style="margin-top:14px; color:#A8BDD6; font-size:0.875rem;">Email notifications are enabled for <strong style="color:#38BDF8;">{{ incident.reporter_email }}</strong>.</p>
+        <p style="margin-top:14px; color:#9AAED4; font-size:0.875rem;">Email notifications are enabled for <strong style="color:#7090FF;">{{ incident.reporter_email }}</strong>.</p>
     {% else %}
         <p style="margin-top:14px; color:#7A93B4; font-size:0.875rem;">No email notifications are configured for this report.</p>
     {% endif %}
 
     <!-- Comment Section for Anonymous Users -->
-    <div style="margin-top:40px; border-top:1px solid rgba(56,189,248,0.1); padding-top:30px;">
+    <div style="margin-top:40px; border-top:1px solid rgba(67,97,238,0.16); padding-top:30px;">
         <h3 style="color:#fff; font-size:1.1rem; margin-bottom:20px; display:flex; align-items:center; gap:10px;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#38BDF8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5B7BFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>
             Discussion & Admin Notes
         </h3>
 
         {% if comments %}
             <div style="display:flex; flex-direction:column; gap:16px; margin-bottom:30px;">
                 {% for comment in comments %}
-                    <div style="padding:16px; border-radius:12px; background:{% if comment.is_admin_note %}rgba(0,232,122,0.05){% else %}rgba(56,189,248,0.03){% endif %}; border:1px solid {% if comment.is_admin_note %}rgba(0,232,122,0.15){% else %}rgba(56,189,248,0.1){% endif %};">
+                    <div style="padding:16px; border-radius:12px; background:{% if comment.is_admin_note %}rgba(67,97,238,0.08){% else %}rgba(91,123,255,0.05){% endif %}; border:1px solid {% if comment.is_admin_note %}rgba(91,123,255,0.28){% else %}rgba(67,97,238,0.14){% endif %};">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                            <span style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:{% if comment.is_admin_note %}#00E87A{% else %}#38BDF8{% endif %};">
+                            <span style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:{% if comment.is_admin_note %}#7090FF{% else %}#8AA9FF{% endif %};">
                                 {% if comment.is_admin_note %}Admin Note{% else %}Your Message{% endif %}
                             </span>
                             <span style="font-size:0.75rem; color:#7A93B4;">{{ comment.created_at|date:"Y-m-d H:i" }}</span>
@@ -158,7 +151,7 @@
                 <label for="{{ comment_form.comment.id_for_label }}" style="font-size:0.85rem; margin-bottom:8px; display:block; color:#A8BDD6;">Send a reply to the staff</label>
                 {{ comment_form.comment }}
             </div>
-            <button type="submit" style="background:#38BDF8; color:#030816; border:none; padding:8px 20px; font-weight:700; border-radius:8px; cursor:pointer;">Send Reply</button>
+            <button type="submit" style="background:linear-gradient(135deg,#3B5BDB,#5B7BFF); color:#fff; border:none; padding:9px 22px; font-weight:700; border-radius:9px; cursor:pointer; box-shadow:0 4px 16px rgba(67,97,238,0.40); transition:filter 0.2s,transform 0.2s;">Send Reply</button>
         </form>
     </div>
 </div>

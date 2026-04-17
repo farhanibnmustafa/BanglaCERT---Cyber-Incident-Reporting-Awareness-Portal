@@ -70,6 +70,7 @@ def build_analytics_dashboard(*, scope="verified"):
         analyzed_label = "Verified Posts Analyzed"
 
     total_incidents = len(incidents)
+    total_reported = Incident.objects.count()   # ALL reports regardless of status
     verified_incidents = sum(1 for incident in incidents if incident.status == Incident.STATUS_VERIFIED)
 
     category_counter = Counter(incident.get_category_display() for incident in incidents)
@@ -93,6 +94,7 @@ def build_analytics_dashboard(*, scope="verified"):
 
     return {
         "total_incidents": total_incidents,
+        "total_reported": total_reported,
         "verified_incidents": verified_incidents,
         "public_posts": verified_incidents,
         "most_common_type": most_common_type,
