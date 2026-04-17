@@ -54,7 +54,7 @@ export default function Navbar({ username, isAuthenticated, isStaff, logoUrl, ur
         {isAuthenticated && (
           <div className="notif-wrapper">
              <button className="notif-btn" onClick={() => setShowNotifications(!showNotifications)}>
-                <Bell size={22} color={unreadCount > 0 ? "#00E87A" : "currentColor"} />
+                <Bell size={22} color={unreadCount > 0 ? "#5B7BFF" : "currentColor"} />
                 {unreadCount > 0 && <span className="notif-badge">{unreadCount}</span>}
              </button>
           </div>

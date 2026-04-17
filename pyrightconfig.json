@@ -2,12 +2,9 @@
   "include": [
     "BanglaCERT"
   ],
-  "executionEnvironments": [
-    {
-      "root": "./BanglaCERT",
-      "extraPaths": [
-        "."
-      ]
-    }
-  ]
+  "extraPaths": [
+    "./BanglaCERT"
+  ],
+  "typeCheckingMode": "basic"
 }
+
