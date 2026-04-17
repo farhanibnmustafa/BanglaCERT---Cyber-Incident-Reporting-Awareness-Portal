@@ -150,6 +150,11 @@ STATICFILES_DIRS = [
 ]
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+# Static Asset Caching (Expires Headers / Cache-Control)
+# -----------------------------------------------------------
+WHITENOISE_MAX_AGE = 31536000  # 1 year
+WHITENOISE_IMMUTABLE_FILE_SUPPORT = True
+
 # Cloud Storage Configuration (Supabase S3 Compatible)
 # Set these in your Vercel Project Settings for production
 SUPABASE_S3_ENABLED = all([
