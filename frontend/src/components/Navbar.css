@@ -407,6 +407,7 @@
 
   .nav-actions-mobile { display: flex; }
   .desktop-only { display: none; }
+  .mobile-only { display: flex; }
   
   .notif-dropdown {
     position: fixed;
@@ -430,6 +431,10 @@
 }
 
 /* 4K / Projector */
+@media (min-width: 861px) {
+  .mobile-only { display: none; }
+}
+
 @media (min-width: 1920px) {
   .react-site-nav {
     padding: 16px 32px;

@@ -81,9 +81,9 @@ export default function Navbar({ username, isAuthenticated, isStaff, logoUrl, ur
         <span className="nav-brand-text">BanglaCERT</span>
       </a>
 
-      {/* Shared Notification Bell (shown on both mobile & desktop) */}
+      {/* Notification Bell for Mobile (shown in top actions bar) */}
       {isAuthenticated && (
-        <div className="notif-wrapper">
+        <div className="notif-wrapper mobile-only">
           <button 
             className={`notif-btn ${unreadCount > 0 ? 'pulse' : ''}`} 
             onClick={(e) => {
@@ -149,6 +149,20 @@ export default function Navbar({ username, isAuthenticated, isStaff, logoUrl, ur
 
         {/* Auth Section */}
         <div className="nav-auth">
+          {isAuthenticated && (
+             <div className="notif-wrapper desktop-only">
+                <button className={`notif-btn ${unreadCount > 0 ? 'pulse' : ''}`} onClick={(e) => {
+                  e.stopPropagation();
+                  setShowNotifications(!showNotifications);
+                  if (!showNotifications && unreadCount > 0) handleMarkAsRead();
+                }}>
+                  <Bell size={18} />
+                  {unreadCount > 0 && <span className="notif-badge">{unreadCount}</span>}
+                </button>
+                {renderNotifDropdown()}
+             </div>
+          )}
+
           {isAuthenticated ? (
             <div className="nav-user-menu">
               <span className="user-greeting">
