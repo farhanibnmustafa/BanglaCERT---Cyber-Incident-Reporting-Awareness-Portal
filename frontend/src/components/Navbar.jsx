@@ -28,6 +28,17 @@ export default function Navbar({ username, isAuthenticated, isStaff, logoUrl, ur
     return () => clearInterval(interval);
   }, [isAuthenticated]);
 
+  // Handle click outside to close notifications
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (showNotifications && !e.target.closest('.notif-wrapper') && !e.target.closest('.notif-dropdown')) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showNotifications]);
+
   const handleMarkAsRead = async () => {
     try {
       await fetch('/notifications/api/mark-read/', {
@@ -41,6 +52,27 @@ export default function Navbar({ username, isAuthenticated, isStaff, logoUrl, ur
     }
   };
 
+  const renderNotifDropdown = () => {
+    if (!showNotifications) return null;
+    return (
+      <div className="notif-dropdown">
+        <div className="notif-header">Notifications</div>
+        <div className="notif-body">
+          {notifications.length > 0 ? (
+            notifications.map(n => (
+              <a key={n.id} href={n.url} className={`notif-item ${!n.is_read ? 'unread' : ''}`}>
+                <div className="notif-msg">{n.message}</div>
+                <div className="notif-time">{n.created_at}</div>
+              </a>
+            ))
+          ) : (
+            <div className="notif-empty">No notifications</div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <nav className="react-site-nav">
       {/* Brand Section */}
@@ -49,16 +81,27 @@ export default function Navbar({ username, isAuthenticated, isStaff, logoUrl, ur
         <span className="nav-brand-text">BanglaCERT</span>
       </a>
 
+      {/* Shared Notification Bell (shown on both mobile & desktop) */}
+      {isAuthenticated && (
+        <div className="notif-wrapper">
+          <button 
+            className={`notif-btn ${unreadCount > 0 ? 'pulse' : ''}`} 
+            onClick={(e) => {
+              e.stopPropagation();
+              console.log("Notification Bell Clicked. Shared state:", showNotifications);
+              setShowNotifications(!showNotifications);
+              if (!showNotifications && unreadCount > 0) handleMarkAsRead();
+            }}
+          >
+            <Bell size={20} color={unreadCount > 0 ? "#5B7BFF" : "currentColor"} />
+            {unreadCount > 0 && <span className="notif-badge">{unreadCount}</span>}
+          </button>
+          {renderNotifDropdown()}
+        </div>
+      )}
+
       {/* Hamburger Menu Toggle for Mobile */}
       <div className="nav-actions-mobile">
-        {isAuthenticated && (
-          <div className="notif-wrapper">
-             <button className="notif-btn" onClick={() => setShowNotifications(!showNotifications)}>
-                <Bell size={22} color={unreadCount > 0 ? "#5B7BFF" : "currentColor"} />
-                {unreadCount > 0 && <span className="notif-badge">{unreadCount}</span>}
-             </button>
-          </div>
-        )}
         <button 
           className="mobile-menu-btn" 
           onClick={() => setIsOpen(!isOpen)}
@@ -106,35 +149,6 @@ export default function Navbar({ username, isAuthenticated, isStaff, logoUrl, ur
 
         {/* Auth Section */}
         <div className="nav-auth">
-          {isAuthenticated && (
-             <div className="notif-wrapper desktop-only">
-                <button className={`notif-btn ${unreadCount > 0 ? 'pulse' : ''}`} onClick={() => {
-                  setShowNotifications(!showNotifications);
-                  if (unreadCount > 0) handleMarkAsRead();
-                }}>
-                  <Bell size={18} />
-                  {unreadCount > 0 && <span className="notif-badge">{unreadCount}</span>}
-                </button>
-                {showNotifications && (
-                  <div className="notif-dropdown">
-                    <div className="notif-header">Notifications</div>
-                    <div className="notif-body">
-                      {notifications.length > 0 ? (
-                        notifications.map(n => (
-                          <a key={n.id} href={n.url} className={`notif-item ${!n.is_read ? 'unread' : ''}`}>
-                            <div className="notif-msg">{n.message}</div>
-                            <div className="notif-time">{n.created_at}</div>
-                          </a>
-                        ))
-                      ) : (
-                        <div className="notif-empty">No notifications</div>
-                      )}
-                    </div>
-                  </div>
-                )}
-             </div>
-          )}
-
           {isAuthenticated ? (
             <div className="nav-user-menu">
               <span className="user-greeting">

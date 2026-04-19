@@ -268,6 +268,8 @@
   position: relative;
   display: flex;
   align-items: center;
+  margin-left: auto; /* Push to right on desktop */
+  padding-right: 14px;
 }
 
 .notif-btn {
@@ -318,9 +320,18 @@
   border: 1px solid rgba(67,97,238,0.28);
   border-radius: 16px;
   box-shadow: 0 16px 48px rgba(2,5,20,0.60), 0 0 0 1px rgba(67,97,238,0.10);
-  z-index: 200;
+  box-shadow: 0 16px 48px rgba(2,5,20,0.60), 0 0 0 1px rgba(67,97,238,0.10);
+  z-index: 500;
   overflow: hidden;
   animation: fadeInDown 0.3s ease;
+}
+
+/* Adjust desktop position since it's now a direct child of .react-site-nav */
+@media (min-width: 861px) {
+  .notif-dropdown {
+    top: calc(100% - 10px);
+    right: 22px; /* Align with navbar padding */
+  }
 }
 
 @keyframes fadeInDown {
@@ -383,9 +394,17 @@
   display: none;
   gap: 10px;
   align-items: center;
+  z-index: 150;
+  position: relative;
 }
 
 @media (max-width: 860px) {
+  .notif-wrapper {
+    margin-left: 0;
+    padding-right: 0;
+    margin-right: 10px;
+  }
+
   .nav-actions-mobile { display: flex; }
   .desktop-only { display: none; }
   
@@ -396,6 +415,7 @@
     right: 14px;
     width: auto;
     max-width: none;
+    z-index: 999;
   }
 }
 
